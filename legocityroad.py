@@ -49,51 +49,67 @@ n_turn     = 6
 n_tcross   = 6
 n_xcross   = 4
 
-n_straight = 4
-n_turn     = 6
-n_tcross   = 2
-n_xcross   = 2
+#n_straight = 4
+#n_turn     = 6
+#n_tcross   = 2
+#n_xcross   = 2
 
-n_straight = 6
-n_turn     = 4
-n_tcross   = 4
-n_xcross   = 1
+#n_straight = 6
+#n_turn     = 4
+#n_tcross   = 4
+#n_xcross   = 1
 
-#n_straight = 2
-#n_turn     = 8
-#n_tcross   = 0
+n_straight = 2
+n_turn     = 12
+n_tcross   = 0
+n_xcross   = 0
+
+#n_straight = 3
+#n_turn     = 4
+#n_tcross   = 2
 #n_xcross   = 0
 
 
 min_used_items = n_straight + n_turn + n_tcross + n_xcross
 
 rotated_board_time = 0.0
+rotated_board_calls = 0
 mirrored_board_time = 0.0
-normal_board_time = 0.0
-board_normal_str_time = 0.0
-extend_left_time = 0.0
-extend_right_time = 0.0
-n_missing_time = 0.0
-first_missing_time = 0.0
+mirrored_board_calls = 0
+board_str_time = 0.0
+board_str_calls = 0
+extend_time = 0.0
+extend_calls = 0
+
+
+def get_board_dimensions(board):
+    board_size_x = len(board)
+    if board_size_x == 0:
+        return 0, 0
+    board_size_y = len(board[0])
+    return board_size_x, board_size_y
 
 def get_rotated_board(board):
     start = time.time()
-    board_size = len(board)
+    #show_board(board)
+    board_size_x, board_size_y = get_board_dimensions(board)
+    #print(f'board_size_x, board_size_y = {board_size_x}, {board_size_y}')
     new_board = []
-    for i in range(board_size):
+
+    for i in range(board_size_y):
         new_board.append([])
-        #for j in range(len(board[i])):
-        for j in range(board_size):
-            new_board[i].append(' ')
-
-    for i in range(board_size):
-        #for j in range(len(board[i])):
-        for j in range(board_size):
-            if board[i][j] in road_types:
-                new_board[j][board_size-1-i] = rotated_road[board[i][j]]
+        for j in range(board_size_x):
+            #print(f' j, board_size_x-1-j,  i = {j}, {board_size_x-1-j}, {i}')
+            #print(f'board[board_size_x-1-j][i] = {board[board_size_x-1-j][i]}')
+            if board[board_size_x-1-j][i] in road_types:
+                new_board[i].append(rotated_road[board[board_size_x-1-j][i]])
+                #new_board[i][j] = rotated_road[board[board_size_x-1-j][i]]
             else:
-                new_board[j][board_size-1-i] = board[i][j]
+                new_board[i].append(board[board_size_x-1-j][i])
+                #new_board[i][j] = board[board_size_x-1-j][i]
 
+    global rotated_board_calls
+    rotated_board_calls += 1
     global rotated_board_time
     rotated_board_time = rotated_board_time + time.time() - start
 
@@ -103,184 +119,152 @@ def get_rotated_board(board):
 def get_mirrored_board(board):
     start = time.time()
     new_board = []
-    board_size = len(board)
-    for i in range(board_size):
+    board_size_x = len(board)
+    board_size_y = len(board[0])
+    for i in range(board_size_x):
         new_board.append([])
         #for j in range(len(board[i])):
-        for j in range(board_size):
+        for j in range(board_size_y):
             new_board[i].append(' ')
 
-    for i in range(board_size):
+    for i in range(board_size_x):
         #for j in range(len(board[i])):
-        for j in range(board_size):
+        for j in range(board_size_y):
             if board[i][j] not in road_types or \
                board[i][j] in straights or \
                board[i][j] == xcross:
-                    new_board[board_size-1-i][j] = board[i][j]
+                    new_board[board_size_x-1-i][j] = board[i][j]
             else:
-                new_board[board_size-1-i][j] = mirrored_road[board[i][j]]
+                new_board[board_size_x-1-i][j] = mirrored_road[board[i][j]]
 
+    global mirrored_board_calls
+    mirrored_board_calls += 1
     global mirrored_board_time
     mirrored_board_time = mirrored_board_time + time.time() - start
 
     return new_board
 
-def get_normal_board(board):
+def get_board_str(board):
     start = time.time()
-    board_size = len(board)
-    for i in range(board_size):
-        if set(board[i]) != set([' ']):
-            first_line = i
-            break
-    for i in reversed(range(board_size)):
-        if set(board[i]) != set([' ']):
-            last_line = i
-            break
-    for j in range(board_size):
-        row = [ board[i][j] for i in range(board_size) ]
-        if set(row) != set([' ']):
-            first_row = j
-            break
-    for j in reversed(range(board_size)):
-        row = [ board[i][j] for i in range(board_size) ]
-        if set(row) != set([' ']):
-            last_row = j
-            break
+    board_str = ""
 
-    normal_board = []
-    x = 0
-    for i in range(first_line, last_line+1):
-        normal_board.append([])
-        for j in range(first_row, last_row+1):
-            normal_board[x].append(board[i][j])
-        x += 1
+    for i in range(len(board)):
+        board_str += ''.join(board[i]) + '\n'
 
-    global normal_board_time
-    normal_board_time = normal_board_time + time.time() - start
+    global board_str_calls
+    board_str_calls += 1
+    global board_str_time
+    board_str_time = board_str_time + time.time() - start
 
-    return normal_board
-
-def get_board_normal_str(board):
-    normal_board = get_normal_board(board)
-    start = time.time()
-    normal_board_str = ""
-
-    for i in range(len(normal_board)):
-        normal_board_str += ''.join(normal_board[i]) + '\n'
-
-    global board_normal_str_time
-    board_normal_str_time = board_normal_str_time + time.time() - start
-
-    return normal_board_str
+    return board_str
 
 def show_board(board):
-    normal_board = get_normal_board(board)
-    if normal_board == []:
-        print('Empty board!')
-        return
+    board_size_x, board_size_y = get_board_dimensions(board)
 
+    #print('-------------------------------------------')
+    #print(board)
     print('-------------------------------------------')
-    for i in range(len(normal_board)):
-        for j in range(len(normal_board[i])):
-            print(normal_board[i][j], end='')
+    for i in range(board_size_x):
+        for j in range(board_size_y):
+            print(board[i][j], end='')
         print()
     print('-------------------------------------------')
 
-def extend_board_left_top(board, n):
+def extend_board_left(board):
     start = time.time()
-    for x in range(n):
-        board_size = len(board)
-        board.insert(0, [])
-        for i in range(board_size):
-            board[0].append(' ')
-        for i in range(board_size + 1):
-            board[i].insert(0,' ')
+    board_size_x, board_size_y = get_board_dimensions(board)
+    for i in range(board_size_x):
+        board[i].insert(0,' ')
 
-    global extend_left_time
-    extend_left_time = extend_left_time + time.time() - start
+    global extend_calls
+    extend_calls += 1
+    global extend_time
+    extend_time = extend_time + time.time() - start
 
-
-def extend_board_rigth_bottom(board, n):
+def extend_board_right(board):
     start = time.time()
-    for x in range(n):
-        board_size = len(board)
-        board.append([])
-        for i in range(board_size):
-            board[board_size].append(' ')
-        for i in range(board_size + 1):
-            board[i].append(' ')
+    board_size_x, board_size_y = get_board_dimensions(board)
+    for i in range(board_size_x):
+        board[i].append(' ')
 
-    global extend_right_time
-    extend_right_time = extend_right_time + time.time() - start
+    global extend_calls
+    extend_calls += 1
+    global extend_time
+    extend_time = extend_time + time.time() - start
+
+def extend_board_top(board):
+    start = time.time()
+    board_size_x, board_size_y = get_board_dimensions(board)
+    board.insert(0, [])
+    for j in range(board_size_y):
+        board[0].append(' ')
+
+    global extend_calls
+    extend_calls += 1
+    global extend_time
+    extend_time = extend_time + time.time() - start
+
+def extend_board_bottom(board):
+    start = time.time()
+    board_size_x, board_size_y = get_board_dimensions(board)
+    board.append([])
+    for j in range(board_size_y):
+        board[board_size_x].append(' ')
+
+    global extend_calls
+    extend_calls += 1
+    global extend_time
+    extend_time = extend_time + time.time() - start
 
 
 def put_new_item(board, x, y, item, missing):
-    current_board_size = len(board)
-    if x < 2 or y < 2:
-        extend_board_left_top(board, 2)
-        current_board_size += 2
-        for i in range(len(missing)):
-            missing[i] = ( missing[i][0]+2, missing[i][1]+2 )
-        x += 2
-        y += 2
-    if x > current_board_size - 3 or y > current_board_size - 3:
-        extend_board_rigth_bottom(board, 2)
-        current_board_size += 2
+    board_size_x, board_size_y = get_board_dimensions(board)
 
     board[x][y] = item
 
-    if board[x+1][y] != '*' and board[x+1][y] not in road_types and item in bottom_open:
-        board[x+1][y] = '*'
-        missing.append((x+1,y))
+    if item in top_open:
+        if x == 0:
+            extend_board_top(board)
+            board_size_x += 1
+            x += 1
+            for i in range(len(missing)):
+                missing[i] = ( missing[i][0]+1, missing[i][1] )
+        if board[x-1][y] != '*' and board[x-1][y] not in road_types:
+            board[x-1][y] = '*'
+            missing.append((x-1,y))
 
-    if board[x-1][y] != '*' and board[x-1][y] not in road_types and item in top_open:
-        board[x-1][y] = '*'
-        missing.append((x-1,y))
+    if item in bottom_open:
+        if x == board_size_x -1:
+            extend_board_bottom(board)
+            board_size_x += 1
+        if board[x+1][y] != '*' and board[x+1][y] not in road_types:
+            board[x+1][y] = '*'
+            missing.append((x+1,y))
 
-    if board[x][y+1] != '*' and board[x][y+1] not in road_types and item in right_open:
-        board[x][y+1] = '*'
-        missing.append((x,y+1))
+    if item in right_open:
+        if y == board_size_y -1:
+            extend_board_right(board)
+            board_size_y += 1
+        if board[x][y+1] != '*' and board[x][y+1] not in road_types:
+            board[x][y+1] = '*'
+            missing.append((x,y+1))
 
-    if board[x][y-1] != '*' and board[x][y-1] not in road_types and item in left_open:
-        board[x][y-1] = '*'
-        missing.append((x,y-1))
-
-
-#def get_n_of_missing(board):
-#    start = time.time()
-#
-#    missing = 0
-#    board_size = len(board)
-#    for i in range(board_size):
-#        for j in range(board_size):
-#            if  board[i][j] == '*':
-#                missing += 1
-#
-#    global n_missing_time
-#    n_missing_time = n_missing_time + time.time() - start
-#
-#    return missing
-#
-#
-#def find_first_missing(board):
-#    start = time.time()
-#    global first_missing_time
-#
-#    board_size = len(board)
-#    for i in range(board_size):
-#        for j in range(board_size):
-#            if  board[i][j] == '*':
-#                first_missing_time = first_missing_time + time.time() - start
-#                return i,j
-#
-#    first_missing_time = first_missing_time + time.time() - start
-#
-#    return None, None
-#
+    if item in left_open:
+        if y == 0:
+            extend_board_left(board)
+            board_size_y += 1
+            y += 1
+            for i in range(len(missing)):
+                missing[i] = ( missing[i][0], missing[i][1]+1 )
+ 
+        if board[x][y-1] != '*' and board[x][y-1] not in road_types:
+            board[x][y-1] = '*'
+            missing.append((x,y-1))
 
 
 def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn, n_tcross, n_xcross, used_items, min_used_items):
     put_new_item(board, a, b, new_item, missing)
+    board_size_x, board_size_y = get_board_dimensions(board)
 
     #show_board(board)
     #print(missing)
@@ -290,8 +274,8 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
         #print('x', end='')
         return False
 
-    normal_board_str = get_board_normal_str(board)
-    if normal_board_str in already_tried:
+    board_str = get_board_str(board)
+    if board_str in already_tried:
         return False
 
     r1_board  = get_rotated_board(board)
@@ -302,22 +286,22 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
     mr2_board = get_rotated_board(mr1_board)
     mr3_board = get_rotated_board(mr2_board)
 
-    normal_r1_board_srt   = get_board_normal_str(r1_board)
-    normal_r2_board_srt   = get_board_normal_str(r2_board)
-    normal_r3_board_srt   = get_board_normal_str(r3_board)
-    normal_m_board_srt    = get_board_normal_str(m_board)
-    normal_mr1_board_srt  = get_board_normal_str(mr1_board)
-    normal_mr2_board_srt  = get_board_normal_str(mr2_board)
-    normal_mr3_board_srt  = get_board_normal_str(mr3_board)
+    r1_board_srt   = get_board_str(r1_board)
+    r2_board_srt   = get_board_str(r2_board)
+    r3_board_srt   = get_board_str(r3_board)
+    m_board_srt    = get_board_str(m_board)
+    mr1_board_srt  = get_board_str(mr1_board)
+    mr2_board_srt  = get_board_str(mr2_board)
+    mr3_board_srt  = get_board_str(mr3_board)
 
-    already_tried.add(normal_board_str)
-    already_tried.add(normal_r1_board_srt)
-    already_tried.add(normal_r2_board_srt)
-    already_tried.add(normal_r3_board_srt)
-    already_tried.add(normal_m_board_srt)
-    already_tried.add(normal_mr1_board_srt)
-    already_tried.add(normal_mr2_board_srt)
-    already_tried.add(normal_mr3_board_srt)
+    already_tried.add(board_str)
+    already_tried.add(r1_board_srt)
+    already_tried.add(r2_board_srt)
+    already_tried.add(r3_board_srt)
+    already_tried.add(m_board_srt)
+    already_tried.add(mr1_board_srt)
+    already_tried.add(mr2_board_srt)
+    already_tried.add(mr3_board_srt)
 
     if len(missing) == 0:
         # there are no open ends
@@ -330,7 +314,7 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
         n_solutions += 1
         show_board(board)
         #print('xxxxxxxxxxxxxx')
-        #print(normal_m_board_str)
+        #print(m_board_str)
         #print('xxxxxxxxxxxxxx')
         return True
 
@@ -341,22 +325,22 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
     #print(board[x][y])
     #show_board(board)
     possible_new_items = set(road_types)
-    if board[x-1][y] in road_types:
+    if x > 0 and board[x-1][y] in road_types:
         if board[x-1][y] in bottom_open:
             possible_new_items = possible_new_items & top_open
         else:
             possible_new_items = possible_new_items - top_open
-    if board[x+1][y] in road_types:
+    if x < board_size_x - 1 and board[x+1][y] in road_types:
         if board[x+1][y] in top_open:
             possible_new_items = possible_new_items & bottom_open
         else:
             possible_new_items = possible_new_items - bottom_open
-    if board[x][y+1] in road_types:
+    if y < board_size_y - 1 and board[x][y+1] in road_types:
         if board[x][y+1] in left_open:
             possible_new_items = possible_new_items & right_open
         else:
             possible_new_items = possible_new_items - right_open
-    if board[x][y-1] in road_types:
+    if y > 0 and board[x][y-1] in road_types:
         if board[x][y-1] in right_open:
             possible_new_items = possible_new_items & left_open
         else:
@@ -372,6 +356,7 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
         possible_new_items = possible_new_items - set([xcross])
 
     if len(possible_new_items) == 0:
+        # no fitting road piece
         #print('0', end='')
         return False
 
@@ -408,13 +393,9 @@ print(f'total      = { n_straight + n_turn + n_tcross + n_xcross}')
 solve_board(already_tried, missing, board, 0, 0, '╭', n_straight, n_turn-1, n_tcross, n_xcross, 1, min_used_items)
 
 print(f'\nNumber of solutions: { n_solutions }')
-print(f' rotated_board_time    = { rotated_board_time }')
-print(f' mirrored_board_time   = { mirrored_board_time }')
-print(f' normal_board_time     = { normal_board_time }')
-print(f' board_normal_str_time = { board_normal_str_time }')
-print(f' extend_left_time      = { extend_left_time }')
-print(f' extend_right_time     = { extend_right_time }')
-print(f' n_missing_time        = { n_missing_time }')
-print(f' first_missing_time    = { first_missing_time }')
+print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
+print(f' mirrored_board_time   = { mirrored_board_time }   calls: {mirrored_board_calls}')
+print(f' board_str_time        = { board_str_time }   calls: {board_str_calls}')
+print(f' extend_time           = { extend_time }   calls: {extend_calls}')
 
 
