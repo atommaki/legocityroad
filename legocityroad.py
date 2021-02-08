@@ -55,10 +55,10 @@ n_turn     = 6
 n_tcross   = 6
 n_xcross   = 2
 
-#n_straight = 6
-#n_turn     = 4
-#n_tcross   = 4
-#n_xcross   = 1
+n_straight = 6
+n_turn     = 4
+n_tcross   = 4
+n_xcross   = 1
 
 #n_straight = 4
 #n_turn     = 6
@@ -265,7 +265,7 @@ def put_new_item(board, x, y, item, missing):
             missing.append((x,y-1))
 
 
-def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn, n_tcross, n_xcross, used_items, min_used_items):
+def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straight, n_turn, n_tcross, n_xcross, used_items, min_used_items):
     put_new_item(board, a, b, new_item, missing)
     board_size_x, board_size_y = get_board_dimensions(board)
 
@@ -315,7 +315,7 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
 
         global n_solutions
         n_solutions += 1
-        print(f'\nFound a new solution! ({n_solutions})')
+        print(f'\nFound a new solution! ({n_solutions}, {round(progress[1])}%)')
         show_board(board)
         #print('xxxxxxxxxxxxxx')
         #print(m_board_hash)
@@ -365,6 +365,11 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
         return False
 
 
+    possible_new_steps = len(possible_new_items)
+
+    progress_step = (progress[1] - progress[0]) / possible_new_steps
+
+    step = 0
     for new in possible_new_items:
         nn_straight = n_straight
         nn_turn     = n_turn
@@ -380,9 +385,15 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
         elif new == xcross:
             nn_xcross -= 1
 
-        solve_board(already_tried, deepcopy(missing), deepcopy(board), x, y, new, nn_straight, nn_turn, nn_tcross, nn_xcross, used_items+1, min_used_items)
+        next_progress = ( progress[0] + progress_step * step,
+                          progress[0] + progress_step * (step+1)
+                        )
 
+        solve_board(next_progress, already_tried, deepcopy(missing), deepcopy(board), x, y, new, nn_straight, nn_turn, nn_tcross, nn_xcross, used_items+1, min_used_items)
 
+        step += 1
+
+progress = (0, 100)
 n_solutions = 0
 already_tried = set([])
 missing = []
@@ -395,7 +406,7 @@ print(f'n_tcross   = { n_tcross }')
 print(f'n_xcross   = { n_xcross }')
 print(f'total      = { n_straight + n_turn + n_tcross + n_xcross}')
 
-solve_board(already_tried, missing, board, 0, 0, '╭', n_straight, n_turn-1, n_tcross, n_xcross, 1, min_used_items)
+solve_board(progress, already_tried, missing, board, 0, 0, '╭', n_straight, n_turn-1, n_tcross, n_xcross, 1, min_used_items)
 
 print(f'\nNumber of solutions: { n_solutions }')
 print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
