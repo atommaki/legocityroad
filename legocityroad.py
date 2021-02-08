@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 import time
+import sys
 
 road_types =  set([ '─', '│', '╭', '╮', '╰', '╯', '┼', '┤', '┴', '├', '┬' ])
 
@@ -49,20 +50,25 @@ n_turn     = 6
 n_tcross   = 6
 n_xcross   = 4
 
-#n_straight = 4
-#n_turn     = 6
-#n_tcross   = 2
-#n_xcross   = 2
+n_straight = 4
+n_turn     = 6
+n_tcross   = 6
+n_xcross   = 2
 
 #n_straight = 6
 #n_turn     = 4
 #n_tcross   = 4
 #n_xcross   = 1
 
-n_straight = 2
-n_turn     = 12
-n_tcross   = 0
-n_xcross   = 0
+#n_straight = 4
+#n_turn     = 6
+#n_tcross   = 2
+#n_xcross   = 2
+
+#n_straight = 2
+#n_turn     = 12
+#n_tcross   = 0
+#n_xcross   = 0
 
 #n_straight = 3
 #n_turn     = 4
@@ -76,8 +82,8 @@ rotated_board_time = 0.0
 rotated_board_calls = 0
 mirrored_board_time = 0.0
 mirrored_board_calls = 0
-board_str_time = 0.0
-board_str_calls = 0
+board_hash_time = 0.0
+board_hash_calls = 0
 extend_time = 0.0
 extend_calls = 0
 
@@ -144,19 +150,16 @@ def get_mirrored_board(board):
 
     return new_board
 
-def get_board_str(board):
+def get_board_hash(board):
     start = time.time()
-    board_str = ""
+    h = hash(tuple(tuple(x) for x in board))
 
-    for i in range(len(board)):
-        board_str += ''.join(board[i]) + '\n'
+    global board_hash_calls
+    board_hash_calls += 1
+    global board_hash_time
+    board_hash_time = board_hash_time + time.time() - start
 
-    global board_str_calls
-    board_str_calls += 1
-    global board_str_time
-    board_str_time = board_str_time + time.time() - start
-
-    return board_str
+    return h
 
 def show_board(board):
     board_size_x, board_size_y = get_board_dimensions(board)
@@ -274,34 +277,35 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
         #print('x', end='')
         return False
 
-    board_str = get_board_str(board)
-    if board_str in already_tried:
+    board_hash = get_board_hash(board)
+    r1_board   = get_rotated_board(board)
+    r2_board   = get_rotated_board(r1_board)
+    r3_board   = get_rotated_board(r2_board)
+    m_board    = get_mirrored_board(board)
+    mr1_board  = get_rotated_board(m_board)
+    mr2_board  = get_rotated_board(mr1_board)
+    mr3_board  = get_rotated_board(mr2_board)
+
+    r1_board_hash   = get_board_hash(r1_board)
+    r2_board_hash   = get_board_hash(r2_board)
+    r3_board_hash   = get_board_hash(r3_board)
+    m_board_hash    = get_board_hash(m_board)
+    mr1_board_hash  = get_board_hash(mr1_board)
+    mr2_board_hash  = get_board_hash(mr2_board)
+    mr3_board_hash  = get_board_hash(mr3_board)
+
+    if board_hash in already_tried or \
+       r1_board_hash in already_tried or \
+       r2_board_hash in already_tried or \
+       r3_board_hash in already_tried or \
+       m_board_hash in already_tried or \
+       mr1_board_hash in already_tried or \
+       mr2_board_hash in already_tried or \
+       mr3_board_hash in already_tried:
         return False
 
-    r1_board  = get_rotated_board(board)
-    r2_board  = get_rotated_board(r1_board)
-    r3_board  = get_rotated_board(r2_board)
-    m_board   = get_mirrored_board(board)
-    mr1_board = get_rotated_board(m_board)
-    mr2_board = get_rotated_board(mr1_board)
-    mr3_board = get_rotated_board(mr2_board)
 
-    r1_board_srt   = get_board_str(r1_board)
-    r2_board_srt   = get_board_str(r2_board)
-    r3_board_srt   = get_board_str(r3_board)
-    m_board_srt    = get_board_str(m_board)
-    mr1_board_srt  = get_board_str(mr1_board)
-    mr2_board_srt  = get_board_str(mr2_board)
-    mr3_board_srt  = get_board_str(mr3_board)
-
-    already_tried.add(board_str)
-    already_tried.add(r1_board_srt)
-    already_tried.add(r2_board_srt)
-    already_tried.add(r3_board_srt)
-    already_tried.add(m_board_srt)
-    already_tried.add(mr1_board_srt)
-    already_tried.add(mr2_board_srt)
-    already_tried.add(mr3_board_srt)
+    already_tried.add(board_hash)
 
     if len(missing) == 0:
         # there are no open ends
@@ -314,7 +318,7 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
         n_solutions += 1
         show_board(board)
         #print('xxxxxxxxxxxxxx')
-        #print(m_board_str)
+        #print(m_board_hash)
         #print('xxxxxxxxxxxxxx')
         return True
 
@@ -378,6 +382,7 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
 
         solve_board(already_tried, deepcopy(missing), deepcopy(board), x, y, new, nn_straight, nn_turn, nn_tcross, nn_xcross, used_items+1, min_used_items)
 
+
 n_solutions = 0
 already_tried = set([])
 missing = []
@@ -395,7 +400,8 @@ solve_board(already_tried, missing, board, 0, 0, '╭', n_straight, n_turn-1, n_
 print(f'\nNumber of solutions: { n_solutions }')
 print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
 print(f' mirrored_board_time   = { mirrored_board_time }   calls: {mirrored_board_calls}')
-print(f' board_str_time        = { board_str_time }   calls: {board_str_calls}')
+print(f' board_hash_time       = { board_hash_time }   calls: {board_hash_calls}')
 print(f' extend_time           = { extend_time }   calls: {extend_calls}')
-
+print()
+print(f' size of already_tried: {sys.getsizeof(already_tried) / 1024**2} MB')
 
