@@ -60,10 +60,15 @@ n_turn     = 4
 n_tcross   = 4
 n_xcross   = 1
 
-#n_straight = 4
-#n_turn     = 6
-#n_tcross   = 2
-#n_xcross   = 2
+n_straight = 4
+n_turn     = 6
+n_tcross   = 2
+n_xcross   = 2
+
+n_straight = 3
+n_turn     = 6
+n_tcross   = 2
+n_xcross   = 2
 
 #n_straight = 2
 #n_turn     = 12
@@ -160,6 +165,35 @@ def get_board_hash(board):
     board_hash_time = board_hash_time + time.time() - start
 
     return h
+
+def get_transformed_board_hashes(board):
+    start = time.time()
+    hash_set = set()
+
+    #board_size_x, board_size_y = get_board_dimensions(board)
+
+    r1_board   = get_rotated_board(board)
+    r2_board   = get_rotated_board(r1_board)
+    r3_board   = get_rotated_board(r2_board)
+    m_board    = get_mirrored_board(board)
+    mr1_board  = get_rotated_board(m_board)
+    mr2_board  = get_rotated_board(mr1_board)
+    mr3_board  = get_rotated_board(mr2_board)
+
+    hash_set.add(get_board_hash(r1_board))
+    hash_set.add(get_board_hash(r2_board))
+    hash_set.add(get_board_hash(r3_board))
+    hash_set.add(get_board_hash(m_board))
+    hash_set.add(get_board_hash(mr1_board))
+    hash_set.add(get_board_hash(mr2_board))
+    hash_set.add(get_board_hash(mr3_board))
+
+    global board_hash_calls
+    board_hash_calls += 1
+    global board_hash_time
+    board_hash_time = board_hash_time + time.time() - start
+
+    return hash_set
 
 def show_board(board):
     board_size_x, board_size_y = get_board_dimensions(board)
@@ -259,7 +293,7 @@ def put_new_item(board, x, y, item, missing):
             y += 1
             for i in range(len(missing)):
                 missing[i] = ( missing[i][0], missing[i][1]+1 )
- 
+
         if board[x][y-1] != '*' and board[x][y-1] not in road_types:
             board[x][y-1] = '*'
             missing.append((x,y-1))
@@ -278,32 +312,10 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
         return False
 
     board_hash = get_board_hash(board)
-    r1_board   = get_rotated_board(board)
-    r2_board   = get_rotated_board(r1_board)
-    r3_board   = get_rotated_board(r2_board)
-    m_board    = get_mirrored_board(board)
-    mr1_board  = get_rotated_board(m_board)
-    mr2_board  = get_rotated_board(mr1_board)
-    mr3_board  = get_rotated_board(mr2_board)
+    board_all_hashes = set([board_hash]) | get_transformed_board_hashes(board)
 
-    r1_board_hash   = get_board_hash(r1_board)
-    r2_board_hash   = get_board_hash(r2_board)
-    r3_board_hash   = get_board_hash(r3_board)
-    m_board_hash    = get_board_hash(m_board)
-    mr1_board_hash  = get_board_hash(mr1_board)
-    mr2_board_hash  = get_board_hash(mr2_board)
-    mr3_board_hash  = get_board_hash(mr3_board)
-
-    if board_hash in already_tried or \
-       r1_board_hash in already_tried or \
-       r2_board_hash in already_tried or \
-       r3_board_hash in already_tried or \
-       m_board_hash in already_tried or \
-       mr1_board_hash in already_tried or \
-       mr2_board_hash in already_tried or \
-       mr3_board_hash in already_tried:
+    if board_all_hashes & already_tried != set():
         return False
-
 
     already_tried.add(board_hash)
 
