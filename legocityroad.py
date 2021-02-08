@@ -313,9 +313,9 @@ def solve_board(already_tried, missing, board, a,b, new_item, n_straight, n_turn
             print('o', end='')
             return False
 
-        print('\nFound a new solution!')
         global n_solutions
         n_solutions += 1
+        print(f'\nFound a new solution! ({n_solutions})')
         show_board(board)
         #print('xxxxxxxxxxxxxx')
         #print(m_board_hash)
