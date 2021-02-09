@@ -45,25 +45,25 @@ rotated_road = {
              }
 
 
-n_straight = 4
-n_turn     = 6
-n_tcross   = 6
-n_xcross   = 4
+#n_straight = 4
+#n_turn     = 6
+#n_tcross   = 6
+#n_xcross   = 4
 
-n_straight = 4
-n_turn     = 6
-n_tcross   = 6
-n_xcross   = 2
+#n_straight = 4 # ~7h runtime, ~10GB RAM, 781 solution
+#n_turn     = 6
+#n_tcross   = 6
+#n_xcross   = 2
 
-n_straight = 6
-n_turn     = 4
-n_tcross   = 4
-n_xcross   = 1
+#n_straight = 6
+#n_turn     = 4
+#n_tcross   = 4
+#n_xcross   = 1
 
-n_straight = 4
-n_turn     = 6
-n_tcross   = 2
-n_xcross   = 2
+#n_straight = 4
+#n_turn     = 6
+#n_tcross   = 2
+#n_xcross   = 2
 
 n_straight = 3
 n_turn     = 6
