@@ -17,7 +17,7 @@ turns       = set([ '╭', '╮', '╰', '╯' ])
 t_crosses   = set([ '┤', '┴', '├', '┬' ])
 xcross      = set([ '┼' ])
 
-mirrored_plate = {
+updown_mirrored_plate = {
                 '╯': '╮',
                 '╮': '╯',
                 '╰': '╭',
@@ -33,7 +33,23 @@ mirrored_plate = {
                 ' ': ' '
              }
 
-rotated_plate = {
+rightleft_mirrored_plate = {
+                '╯': '╰',
+                '╮': '╭',
+                '╰': '╯',
+                '╭': '╮',
+                '├': '┤',
+                '┤': '├',
+                '┬': '┬',
+                '┴': '┴',
+                '─': '─',
+                '│': '│',
+                '┼': '┼',
+                '*': '*',
+                ' ': ' '
+             }
+
+right_rotated_plate = {
                 '╯': '╰',
                 '╰': '╭',
                 '╭': '╮',
@@ -48,6 +64,39 @@ rotated_plate = {
                 '*': '*',
                 ' ': ' '
              }
+
+left_rotated_plate = {
+                '╰': '╯',
+                '╭': '╰',
+                '╮': '╭',
+                '╯': '╮',
+                '┬': '├',
+                '┤': '┬',
+                '┴': '┤',
+                '├': '┴',
+                '│': '─',
+                '─': '│',
+                '┼': '┼',
+                '*': '*',
+                ' ': ' '
+             }
+
+twice_rotated_plate = {
+                '╰': '╮',
+                '╭': '╯',
+                '╮': '╰',
+                '╯': '╭',
+                '┬': '┴',
+                '┤': '├',
+                '┴': '┬',
+                '├': '┤',
+                '│': '│',
+                '─': '─',
+                '┼': '┼',
+                '*': '*',
+                ' ': ' '
+             }
+
 
 
 #n_straight = 4
@@ -97,24 +146,56 @@ extend_time = 0.0
 extend_calls = 0
 
 
-def get_board_dimensions(board):
+def get_board_size(board):
     board_size_x = len(board)
     if board_size_x == 0:
         return 0, 0
     board_size_y = len(board[0])
     return board_size_x, board_size_y
 
-def get_rotated_board(board):
+def get_right_rotated_board(board):
     start = time.time()
-    #show_board(board)
-    board_size_x, board_size_y = get_board_dimensions(board)
-    #print(f'board_size_x, board_size_y = {board_size_x}, {board_size_y}')
+    board_size_x, board_size_y = get_board_size(board)
     new_board = []
 
     for i in range(board_size_y):
         new_board.append([])
         for j in range(board_size_x):
-            new_board[i].append(rotated_plate[board[board_size_x-1-j][i]])
+            new_board[i].append(right_rotated_plate[board[board_size_x-1-j][i]])
+
+    global rotated_board_calls
+    rotated_board_calls += 1
+    global rotated_board_time
+    rotated_board_time = rotated_board_time + time.time() - start
+
+    return new_board
+
+def get_left_rotated_board(board):
+    start = time.time()
+    board_size_x, board_size_y = get_board_size(board)
+    new_board = []
+
+    for i in range(board_size_y):
+        new_board.append([])
+        for j in range(board_size_x):
+            new_board[i].append(left_rotated_plate[board[j][board_size_y-1-i]])
+
+    global rotated_board_calls
+    rotated_board_calls += 1
+    global rotated_board_time
+    rotated_board_time = rotated_board_time + time.time() - start
+
+    return new_board
+
+def get_twice_rotated_board(board):
+    start = time.time()
+    board_size_x, board_size_y = get_board_size(board)
+    new_board = []
+
+    for i in range(board_size_x):
+        new_board.append([])
+        for j in range(board_size_y):
+            new_board[i].append(twice_rotated_plate[board[board_size_x-1-i][board_size_y-1-j]])
 
     global rotated_board_calls
     rotated_board_calls += 1
@@ -124,7 +205,7 @@ def get_rotated_board(board):
     return new_board
 
 
-def get_mirrored_board(board):
+def get_updown_mirrored_board(board):
     start = time.time()
     new_board = []
     board_size_x = len(board)
@@ -138,7 +219,7 @@ def get_mirrored_board(board):
     for i in range(board_size_x):
         #for j in range(len(board[i])):
         for j in range(board_size_y):
-            new_board[board_size_x-1-i][j] = mirrored_plate[board[i][j]]
+            new_board[board_size_x-1-i][j] = updown_mirrored_plate[board[i][j]]
 
     global mirrored_board_calls
     mirrored_board_calls += 1
@@ -149,7 +230,11 @@ def get_mirrored_board(board):
 
 def get_board_hash(board):
     start = time.time()
-    h = hash(tuple(tuple(x) for x in board))
+    board_size_x, board_size_y = get_board_size(board)
+    if board_size_x > board_size_y:
+        h = hash(tuple(tuple(x) for x in get_right_rotated_board(board)))
+    else:
+        h = hash(tuple(tuple(x) for x in board))
 
     global board_hash_calls
     board_hash_calls += 1
@@ -162,23 +247,42 @@ def get_transformed_board_hashes(board):
     start = time.time()
     hash_set = set()
 
-    #board_size_x, board_size_y = get_board_dimensions(board)
+    board_size_x, board_size_y = get_board_size(board)
 
-    r1_board   = get_rotated_board(board)
-    r2_board   = get_rotated_board(r1_board)
-    r3_board   = get_rotated_board(r2_board)
-    m_board    = get_mirrored_board(board)
-    mr1_board  = get_rotated_board(m_board)
-    mr2_board  = get_rotated_board(mr1_board)
-    mr3_board  = get_rotated_board(mr2_board)
+    if board_size_x > board_size_y:
+        r3_board   = get_left_rotated_board(board)
+        m_board    = get_updown_mirrored_board(board)
+        mr1_board  = get_right_rotated_board(m_board)
+        mr3_board  = get_left_rotated_board(m_board)
 
-    hash_set.add(get_board_hash(r1_board))
-    hash_set.add(get_board_hash(r2_board))
-    hash_set.add(get_board_hash(r3_board))
-    hash_set.add(get_board_hash(m_board))
-    hash_set.add(get_board_hash(mr1_board))
-    hash_set.add(get_board_hash(mr2_board))
-    hash_set.add(get_board_hash(mr3_board))
+        # r1 hash is already stored (see get_board_hash())
+        hash_set.add(get_board_hash(r3_board))
+        hash_set.add(get_board_hash(mr1_board))
+        hash_set.add(get_board_hash(mr3_board))
+    elif board_size_x < board_size_y:
+        r2_board   = get_twice_rotated_board(board)
+        m_board    = get_updown_mirrored_board(board)
+        mr2_board  = get_twice_rotated_board(m_board)
+
+        hash_set.add(get_board_hash(r2_board))
+        hash_set.add(get_board_hash(m_board))
+        hash_set.add(get_board_hash(mr2_board))
+    else: # square board
+        r1_board   = get_right_rotated_board(board)
+        r2_board   = get_twice_rotated_board(board)
+        r3_board   = get_left_rotated_board(board)
+        m_board    = get_updown_mirrored_board(board)
+        mr1_board  = get_right_rotated_board(m_board)
+        mr2_board  = get_twice_rotated_board(m_board)
+        mr3_board  = get_left_rotated_board(m_board)
+
+        hash_set.add(get_board_hash(r1_board))
+        hash_set.add(get_board_hash(r2_board))
+        hash_set.add(get_board_hash(r3_board))
+        hash_set.add(get_board_hash(m_board))
+        hash_set.add(get_board_hash(mr1_board))
+        hash_set.add(get_board_hash(mr2_board))
+        hash_set.add(get_board_hash(mr3_board))
 
     global board_hash_calls
     board_hash_calls += 1
@@ -188,7 +292,7 @@ def get_transformed_board_hashes(board):
     return hash_set
 
 def show_board(board):
-    board_size_x, board_size_y = get_board_dimensions(board)
+    board_size_x, board_size_y = get_board_size(board)
 
     #print('-------------------------------------------')
     #print(board)
@@ -201,7 +305,7 @@ def show_board(board):
 
 def extend_board_left(board):
     start = time.time()
-    board_size_x, board_size_y = get_board_dimensions(board)
+    board_size_x, board_size_y = get_board_size(board)
     for i in range(board_size_x):
         board[i].insert(0,' ')
 
@@ -212,7 +316,7 @@ def extend_board_left(board):
 
 def extend_board_right(board):
     start = time.time()
-    board_size_x, board_size_y = get_board_dimensions(board)
+    board_size_x, board_size_y = get_board_size(board)
     for i in range(board_size_x):
         board[i].append(' ')
 
@@ -223,7 +327,7 @@ def extend_board_right(board):
 
 def extend_board_top(board):
     start = time.time()
-    board_size_x, board_size_y = get_board_dimensions(board)
+    board_size_x, board_size_y = get_board_size(board)
     board.insert(0, [])
     for j in range(board_size_y):
         board[0].append(' ')
@@ -235,7 +339,7 @@ def extend_board_top(board):
 
 def extend_board_bottom(board):
     start = time.time()
-    board_size_x, board_size_y = get_board_dimensions(board)
+    board_size_x, board_size_y = get_board_size(board)
     board.append([])
     for j in range(board_size_y):
         board[board_size_x].append(' ')
@@ -247,7 +351,7 @@ def extend_board_bottom(board):
 
 
 def put_new_item(board, x, y, item, missing):
-    board_size_x, board_size_y = get_board_dimensions(board)
+    board_size_x, board_size_y = get_board_size(board)
 
     board[x][y] = item
 
@@ -291,7 +395,7 @@ def put_new_item(board, x, y, item, missing):
             missing.append((x,y-1))
 
 
-def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straight, n_turn, n_tcross, n_xcross, used_items, min_used_items):
+def solve_board(progress, n_solutions, already_tried, missing, board, a,b, new_item, n_straight, n_turn, n_tcross, n_xcross, used_items, min_used_items):
 
     put_new_item(board, a, b, new_item, missing)
 
@@ -300,7 +404,7 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
     elif new_item in t_crosses:  n_tcross   -= 1
     elif new_item in xcross:     n_xcross   -= 1
 
-    board_size_x, board_size_y = get_board_dimensions(board)
+    board_size_x, board_size_y = get_board_size(board)
 
     #show_board(board)
     #print(missing)
@@ -324,9 +428,8 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
             print('o', end='')
             return False
 
-        global n_solutions
-        n_solutions += 1
-        print(f'\nFound a new solution! Size: {board_size_x}x{board_size_y} ({n_solutions}, {round(progress[1])}%)')
+        n_solutions[0] += 1
+        print(f'\nFound a new solution! Size: {board_size_x}x{board_size_y} ({n_solutions[0]}, {round(progress[1])}%)')
         show_board(board)
         #print('xxxxxxxxxxxxxx')
         #print(m_board_hash)
@@ -383,56 +486,60 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
                           progress[0] + progress_step * (step+1)
                         )
 
-        solve_board(next_progress, already_tried, deepcopy(missing), deepcopy(board), x, y, new, n_straight, n_turn, n_tcross, n_xcross, used_items+1, min_used_items)
+        solve_board(next_progress, n_solutions, already_tried, deepcopy(missing), deepcopy(board), x, y, new, n_straight, n_turn, n_tcross, n_xcross, used_items+1, min_used_items)
 
         step += 1
 
 
 
-### Main
+def main():
+    ### Main
 
-#n_straight = 4
-#n_turn     = 6
-#n_tcross   = 6
-#n_xcross   = 4
+    #n_straight = 4
+    #n_turn     = 6
+    #n_tcross   = 6
+    #n_xcross   = 4
 
-### Arguments
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--straight', type=int, action='store', default=0, help='number of straight road plates')
-parser.add_argument('--turn', type=int, action='store', default=0,     help='number of simple turn road plates')
-parser.add_argument('--tcross', type=int, action='store', default=0,   help='number of T (3 way) crossing road plates')
-parser.add_argument('--xcross', type=int, action='store', default=0,   help='number of X (4 way) crossing road plates')
+    ### Arguments
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--straight', type=int, action='store', default=0, help='number of straight road plates')
+    parser.add_argument('--turn', type=int, action='store', default=0,     help='number of simple turn road plates')
+    parser.add_argument('--tcross', type=int, action='store', default=0,   help='number of T (3 way) crossing road plates')
+    parser.add_argument('--xcross', type=int, action='store', default=0,   help='number of X (4 way) crossing road plates')
 
-args = parser.parse_args()
-n_straight = args.straight
-n_turn = args.turn
-n_tcross = args.tcross
-n_xcross = args.xcross
+    args = parser.parse_args()
+    n_straight = args.straight
+    n_turn = args.turn
+    n_tcross = args.tcross
+    n_xcross = args.xcross
 
-### /Arguments
+    ### /Arguments
 
-min_used_items = n_straight + n_turn + n_tcross + n_xcross
+    min_used_items = n_straight + n_turn + n_tcross + n_xcross
 
-progress = (0, 100)
-n_solutions = 0
-already_tried = set([])
-missing = []
+    progress = (0, 100)
+    n_solutions = [ 0 ]
+    already_tried = set([])
+    missing = []
 
-board = [ [ '*' ] ]
+    board = [ [ '*' ] ]
 
-print(f'n_straight = { n_straight }')
-print(f'n_turn     = { n_turn }')
-print(f'n_tcross   = { n_tcross }')
-print(f'n_xcross   = { n_xcross }')
-print(f'total      = { n_straight + n_turn + n_tcross + n_xcross}')
+    print(f'n_straight = { n_straight }')
+    print(f'n_turn     = { n_turn }')
+    print(f'n_tcross   = { n_tcross }')
+    print(f'n_xcross   = { n_xcross }')
+    print(f'total      = { n_straight + n_turn + n_tcross + n_xcross}')
 
-solve_board(progress, already_tried, missing, board, 0, 0, '╭', n_straight, n_turn, n_tcross, n_xcross, 1, min_used_items)
+    solve_board(progress, n_solutions, already_tried, missing, board, 0, 0, '╭', n_straight, n_turn, n_tcross, n_xcross, 1, min_used_items)
 
-print(f'\nNumber of solutions: { n_solutions }')
-print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
-print(f' mirrored_board_time   = { mirrored_board_time }   calls: {mirrored_board_calls}')
-print(f' board_hash_time       = { board_hash_time }   calls: {board_hash_calls}')
-print(f' extend_time           = { extend_time }   calls: {extend_calls}')
-print()
-print(f' size of already_tried: {sys.getsizeof(already_tried) / 1024**2} MB')
+    print(f'\nNumber of solutions: { n_solutions[0] }')
+    print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
+    print(f' mirrored_board_time   = { mirrored_board_time }   calls: {mirrored_board_calls}')
+    print(f' board_hash_time       = { board_hash_time }   calls: {board_hash_calls}')
+    print(f' extend_time           = { extend_time }   calls: {extend_calls}')
+    print()
+    print(f' size of already_tried: {sys.getsizeof(already_tried) / 1024**2} MB')
+
+if __name__ == "__main__":
+    main()
 
