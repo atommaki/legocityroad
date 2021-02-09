@@ -17,7 +17,7 @@ turns       = set([ '╭', '╮', '╰', '╯' ])
 t_crosses   = set([ '┤', '┴', '├', '┬' ])
 xcross      = '┼'
 
-mirrored_road = {
+mirrored_plate = {
                 '╯': '╮',
                 '╮': '╯',
                 '╰': '╭',
@@ -28,10 +28,12 @@ mirrored_road = {
                 '┴': '┬',
                 '─': '─',
                 '│': '│',
-                '┼': '┼'
+                '┼': '┼',
+                '*': '*',
+                ' ': ' '
              }
 
-rotated_road = {
+rotated_plate = {
                 '╯': '╰',
                 '╰': '╭',
                 '╭': '╮',
@@ -42,7 +44,9 @@ rotated_road = {
                 '┴': '├',
                 '─': '│',
                 '│': '─',
-                '┼': '┼'
+                '┼': '┼',
+                '*': '*',
+                ' ': ' '
              }
 
 
@@ -61,7 +65,7 @@ rotated_road = {
 #n_tcross   = 4
 #n_xcross   = 1
 
-#n_straight = 4
+#n_straight = 4 # ~55sec, 7 solutions
 #n_turn     = 6
 #n_tcross   = 2
 #n_xcross   = 2
@@ -110,14 +114,7 @@ def get_rotated_board(board):
     for i in range(board_size_y):
         new_board.append([])
         for j in range(board_size_x):
-            #print(f' j, board_size_x-1-j,  i = {j}, {board_size_x-1-j}, {i}')
-            #print(f'board[board_size_x-1-j][i] = {board[board_size_x-1-j][i]}')
-            if board[board_size_x-1-j][i] in road_types:
-                new_board[i].append(rotated_road[board[board_size_x-1-j][i]])
-                #new_board[i][j] = rotated_road[board[board_size_x-1-j][i]]
-            else:
-                new_board[i].append(board[board_size_x-1-j][i])
-                #new_board[i][j] = board[board_size_x-1-j][i]
+            new_board[i].append(rotated_plate[board[board_size_x-1-j][i]])
 
     global rotated_board_calls
     rotated_board_calls += 1
@@ -141,12 +138,7 @@ def get_mirrored_board(board):
     for i in range(board_size_x):
         #for j in range(len(board[i])):
         for j in range(board_size_y):
-            if board[i][j] not in road_types or \
-               board[i][j] in straights or \
-               board[i][j] == xcross:
-                    new_board[board_size_x-1-i][j] = board[i][j]
-            else:
-                new_board[board_size_x-1-i][j] = mirrored_road[board[i][j]]
+            new_board[board_size_x-1-i][j] = mirrored_plate[board[i][j]]
 
     global mirrored_board_calls
     mirrored_board_calls += 1
@@ -334,7 +326,7 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
 
         global n_solutions
         n_solutions += 1
-        print(f'\nFound a new solution! Dimensions: {board_size_x}x{board_size_y} ({n_solutions}, {round(progress[1])}%)')
+        print(f'\nFound a new solution! Size: {board_size_x}x{board_size_y} ({n_solutions}, {round(progress[1])}%)')
         show_board(board)
         #print('xxxxxxxxxxxxxx')
         #print(m_board_hash)
