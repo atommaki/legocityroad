@@ -3,6 +3,7 @@
 from copy import deepcopy
 import time
 import sys
+import argparse
 
 road_types =  set([ '─', '│', '╭', '╮', '╰', '╯', '┼', '┤', '┴', '├', '┬' ])
 
@@ -65,10 +66,10 @@ rotated_road = {
 #n_tcross   = 2
 #n_xcross   = 2
 
-n_straight = 3
-n_turn     = 6
-n_tcross   = 2
-n_xcross   = 2
+#n_straight = 3
+#n_turn     = 6
+#n_tcross   = 2
+#n_xcross   = 2
 
 #n_straight = 2
 #n_turn     = 12
@@ -81,7 +82,6 @@ n_xcross   = 2
 #n_xcross   = 0
 
 
-min_used_items = n_straight + n_turn + n_tcross + n_xcross
 
 rotated_board_time = 0.0
 rotated_board_calls = 0
@@ -300,7 +300,14 @@ def put_new_item(board, x, y, item, missing):
 
 
 def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straight, n_turn, n_tcross, n_xcross, used_items, min_used_items):
+
     put_new_item(board, a, b, new_item, missing)
+
+    if   new_item in straights:  n_straight -= 1
+    elif new_item in turns:      n_turn     -= 1
+    elif new_item in t_crosses:  n_tcross   -= 1
+    elif new_item == xcross:     n_xcross   -= 1
+
     board_size_x, board_size_y = get_board_dimensions(board)
 
     #show_board(board)
@@ -327,7 +334,7 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
 
         global n_solutions
         n_solutions += 1
-        print(f'\nFound a new solution! ({n_solutions}, {round(progress[1])}%)')
+        print(f'\nFound a new solution! Dimensions: {board_size_x}x{board_size_y} ({n_solutions}, {round(progress[1])}%)')
         show_board(board)
         #print('xxxxxxxxxxxxxx')
         #print(m_board_hash)
@@ -362,14 +369,10 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
         else:
             possible_new_items = possible_new_items - left_open
 
-    if n_straight == 0:
-        possible_new_items = possible_new_items - straights
-    if n_turn == 0:
-        possible_new_items = possible_new_items - turns
-    if n_tcross == 0:
-        possible_new_items = possible_new_items - t_crosses
-    if n_xcross == 0:
-        possible_new_items = possible_new_items - set([xcross])
+    if n_straight < 1: possible_new_items = possible_new_items - straights
+    if n_turn < 1:     possible_new_items = possible_new_items - turns
+    if n_tcross < 1:   possible_new_items = possible_new_items - t_crosses
+    if n_xcross < 1:   possible_new_items = possible_new_items - set([xcross])
 
     if len(possible_new_items) == 0:
         # no fitting road piece
@@ -383,34 +386,47 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
 
     step = 0
     for new in possible_new_items:
-        nn_straight = n_straight
-        nn_turn     = n_turn
-        nn_tcross   = n_tcross
-        nn_xcross   = n_xcross
-
-        if new in straights:
-            nn_straight -= 1
-        elif new in turns:
-            nn_turn -= 1
-        elif new in t_crosses:
-            nn_tcross -= 1
-        elif new == xcross:
-            nn_xcross -= 1
 
         next_progress = ( progress[0] + progress_step * step,
                           progress[0] + progress_step * (step+1)
                         )
 
-        solve_board(next_progress, already_tried, deepcopy(missing), deepcopy(board), x, y, new, nn_straight, nn_turn, nn_tcross, nn_xcross, used_items+1, min_used_items)
+        solve_board(next_progress, already_tried, deepcopy(missing), deepcopy(board), x, y, new, n_straight, n_turn, n_tcross, n_xcross, used_items+1, min_used_items)
 
         step += 1
+
+
+
+### Main
+
+#n_straight = 4
+#n_turn     = 6
+#n_tcross   = 6
+#n_xcross   = 4
+
+### Arguments
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--straight', type=int, action='store', default=0, help='number of straight road plates')
+parser.add_argument('--turn', type=int, action='store', default=0,     help='number of simple turn road plates')
+parser.add_argument('--tcross', type=int, action='store', default=0,   help='number of T (3 way) crossing road plates')
+parser.add_argument('--xcross', type=int, action='store', default=0,   help='number of X (4 way) crossing road plates')
+
+args = parser.parse_args()
+n_straight = args.straight
+n_turn = args.turn
+n_tcross = args.tcross
+n_xcross = args.xcross
+
+### /Arguments
+
+min_used_items = n_straight + n_turn + n_tcross + n_xcross
 
 progress = (0, 100)
 n_solutions = 0
 already_tried = set([])
 missing = []
 
-board = [ [ ' ' ] ]
+board = [ [ '*' ] ]
 
 print(f'n_straight = { n_straight }')
 print(f'n_turn     = { n_turn }')
@@ -418,7 +434,7 @@ print(f'n_tcross   = { n_tcross }')
 print(f'n_xcross   = { n_xcross }')
 print(f'total      = { n_straight + n_turn + n_tcross + n_xcross}')
 
-solve_board(progress, already_tried, missing, board, 0, 0, '╭', n_straight, n_turn-1, n_tcross, n_xcross, 1, min_used_items)
+solve_board(progress, already_tried, missing, board, 0, 0, '╭', n_straight, n_turn, n_tcross, n_xcross, 1, min_used_items)
 
 print(f'\nNumber of solutions: { n_solutions }')
 print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
