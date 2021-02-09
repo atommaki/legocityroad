@@ -15,7 +15,7 @@ bottom_open = set([ '│', '╭', '╮', '┼', '┤', '├', '┬' ])
 straights   = set([ '─', '│' ])
 turns       = set([ '╭', '╮', '╰', '╯' ])
 t_crosses   = set([ '┤', '┴', '├', '┬' ])
-xcross      = '┼'
+xcross      = set([ '┼' ])
 
 mirrored_plate = {
                 '╯': '╮',
@@ -298,7 +298,7 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
     if   new_item in straights:  n_straight -= 1
     elif new_item in turns:      n_turn     -= 1
     elif new_item in t_crosses:  n_tcross   -= 1
-    elif new_item == xcross:     n_xcross   -= 1
+    elif new_item in xcross:     n_xcross   -= 1
 
     board_size_x, board_size_y = get_board_dimensions(board)
 
@@ -364,7 +364,7 @@ def solve_board(progress, already_tried, missing, board, a,b, new_item, n_straig
     if n_straight < 1: possible_new_items = possible_new_items - straights
     if n_turn < 1:     possible_new_items = possible_new_items - turns
     if n_tcross < 1:   possible_new_items = possible_new_items - t_crosses
-    if n_xcross < 1:   possible_new_items = possible_new_items - set([xcross])
+    if n_xcross < 1:   possible_new_items = possible_new_items - xcross
 
     if len(possible_new_items) == 0:
         # no fitting road piece
