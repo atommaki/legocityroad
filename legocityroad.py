@@ -432,22 +432,22 @@ def put_new_item(board, x, y, item, missing):
             missing.append((x,y-1))
 
 
-def solve_board(progress, solutions, already_tried, missing, board, a,b, new_item, n_straight, n_turn, n_tcross, n_xcross, used_items, min_used_items):
+def solve_board(progress, solutions, already_tried, missing, board, a,b, new_item, roads, used_items, min_used_items):
 
 
     put_new_item(board, a, b, new_item, missing)
 
-    if   new_item in straights:  n_straight -= 1
-    elif new_item in turns:      n_turn     -= 1
-    elif new_item in t_crosses:  n_tcross   -= 1
-    elif new_item in xcross:     n_xcross   -= 1
+    if   new_item in straights:  roads['straight'] -= 1
+    elif new_item in turns:      roads['turn']     -= 1
+    elif new_item in t_crosses:  roads['tcross']   -= 1
+    elif new_item in xcross:     roads['xcross']   -= 1
 
     board_size_x, board_size_y = get_board_size(board)
 
     #show_board(board)
     #print(missing)
 
-    if len(missing) > n_straight + n_turn + n_tcross + n_xcross:
+    if len(missing) > roads['straight'] + roads['turn'] + roads['tcross'] + roads['xcross']:
         # already too many open ends
         #print('x', end='')
         return False
@@ -502,10 +502,10 @@ def solve_board(progress, solutions, already_tried, missing, board, a,b, new_ite
         else:
             possible_new_items = possible_new_items - left_open
 
-    if n_straight < 1: possible_new_items = possible_new_items - straights
-    if n_turn < 1:     possible_new_items = possible_new_items - turns
-    if n_tcross < 1:   possible_new_items = possible_new_items - t_crosses
-    if n_xcross < 1:   possible_new_items = possible_new_items - xcross
+    if roads['straight'] < 1: possible_new_items = possible_new_items - straights
+    if roads['turn'] < 1:     possible_new_items = possible_new_items - turns
+    if roads['tcross'] < 1:   possible_new_items = possible_new_items - t_crosses
+    if roads['xcross'] < 1:   possible_new_items = possible_new_items - xcross
 
     if len(possible_new_items) == 0:
         # no fitting road piece
@@ -524,7 +524,7 @@ def solve_board(progress, solutions, already_tried, missing, board, a,b, new_ite
                           progress[0] + progress_step * (step+1)
                         )
 
-        solve_board(next_progress, solutions, already_tried, deepcopy(missing), deepcopy(board), x, y, new, n_straight, n_turn, n_tcross, n_xcross, used_items+1, min_used_items)
+        solve_board(next_progress, solutions, already_tried, deepcopy(missing), deepcopy(board), x, y, new, deepcopy(roads), used_items+1, min_used_items)
 
         step += 1
 
@@ -532,11 +532,6 @@ def solve_board(progress, solutions, already_tried, missing, board, a,b, new_ite
 
 def main():
     ### Main
-
-    #n_straight = 4
-    #n_turn     = 6
-    #n_tcross   = 6
-    #n_xcross   = 4
 
     ### Arguments
     parser = argparse.ArgumentParser(description='Process some integers.')
@@ -568,7 +563,10 @@ def main():
     print(f'n_xcross   = { n_xcross }')
     print(f'total      = { n_straight + n_turn + n_tcross + n_xcross}')
 
-    solve_board(progress, solutions, already_tried, missing, board, 0, 0, '╭', n_straight, n_turn, n_tcross, n_xcross, 1, min_used_items)
+    roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
+
+
+    solve_board(progress, solutions, already_tried, missing, board, 0, 0, '╭', roads, 1, min_used_items)
 
     print(f'\nNumber of solutions: { len(solutions) }')
 
