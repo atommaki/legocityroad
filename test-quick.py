@@ -4,9 +4,9 @@ import legocityroad as lcr
 import os
 import sys
 
-def solution_test(n_straight, n_turn, n_tcross, n_xcross, expected_n_solutions, expected_boards):
+def solution_test(roads, expected_n_solutions, expected_boards):
 
-    min_used_items = n_straight + n_turn + n_tcross + n_xcross
+    min_used_items = roads['straight'] + roads['turn'] + roads['tcross'] + roads['xcross']
 
     progress = (0, 100)
     solutions = [ ]
@@ -19,7 +19,7 @@ def solution_test(n_straight, n_turn, n_tcross, n_xcross, expected_n_solutions, 
     origstdout = sys.stdout
     sys.stdout = f
 
-    lcr.solve_board(progress, solutions, already_tried, missing, board, 0, 0, '╭', n_straight, n_turn, n_tcross, n_xcross, 1, min_used_items)
+    lcr.solve_board(progress, solutions, already_tried, missing, board, 0, 0, '╭', roads, 1, min_used_items)
 
     sys.stdout = origstdout
 
@@ -57,7 +57,7 @@ def solution_test(n_straight, n_turn, n_tcross, n_xcross, expected_n_solutions, 
 
 testcases = [
     {
-    'roads': { 'n_straight': 0, 'n_turn': 4, 'n_tcross': 0, 'n_xcross': 0},
+    'roads': { 'straight': 0, 'turn': 4, 'tcross': 0, 'xcross': 0},
     'expected_n_solutions': 1,
     'expected_boards_str' : [
         '''
@@ -68,7 +68,7 @@ testcases = [
     },
 
     {
-    'roads': { 'n_straight': 2, 'n_turn': 12, 'n_tcross': 0, 'n_xcross': 0},
+    'roads': { 'straight': 2, 'turn': 12, 'tcross': 0, 'xcross': 0},
     'expected_n_solutions': 8,
     'expected_boards_str' : [
         '''
@@ -101,17 +101,19 @@ for testcase in testcases:
     for b_str in testcase['expected_boards_str']:
         expected_boards.append(lcr.str2board(b_str))
 
-    n_straight = testcase['roads']['n_straight']
-    n_turn =     testcase['roads']['n_turn']
-    n_tcross =   testcase['roads']['n_tcross']
-    n_xcross =   testcase['roads']['n_xcross']
+    testcodename = str(testcase['roads']['straight']) + '-'
+    testcodename = testcodename + str(testcase['roads']['turn']) + '-'
+    testcodename = testcodename + str(testcase['roads']['tcross']) + '-'
+    testcodename = testcodename + str(testcase['roads']['xcross'])
+
+    roads = testcase['roads']
 
 
-    print(f'Test case {n_straight} {n_turn} {n_tcross} {n_xcross} starts here.')
-    if solution_test(n_straight, n_turn, n_tcross, n_xcross, expected_n_solutions, expected_boards ):
-        print(f'Test case {n_straight} {n_turn} {n_tcross} {n_xcross}: OK')
+    print(f'Test case {testcodename} starts here.')
+    if solution_test(roads, expected_n_solutions, expected_boards ):
+        print(f'Test case {testcodename}: OK')
     else:
-        print(f'Test case {n_straight} {n_turn} {n_tcross} {n_xcross}: FAIL')
+        print(f'Test case {testcodename}: FAIL')
         exitcode += 1
 
 
