@@ -432,7 +432,6 @@ def put_new_item(board, x, y, item, missing):
             missing.append((x,y-1))
 
 
-def solve_board(progress, n_solutions, already_tried, missing, board, a,b, new_item, n_straight, n_turn, n_tcross, n_xcross, used_items, min_used_items):
 def solve_board(progress, solutions, already_tried, missing, board, a,b, new_item, n_straight, n_turn, n_tcross, n_xcross, used_items, min_used_items):
 
 
@@ -573,7 +572,6 @@ def main():
 
     print(f'\nNumber of solutions: { len(solutions) }')
 
-    print(f'\nNumber of solutions: { n_solutions[0] }')
     print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
     print(f' mirrored_board_time   = { mirrored_board_time }   calls: {mirrored_board_calls}')
     print(f' board_hash_time       = { board_hash_time }   calls: {board_hash_calls}')
