@@ -228,6 +228,43 @@ def get_updown_mirrored_board(board):
 
     return new_board
 
+def trim_board(board):
+    def first_row(board):
+        return [ board[x][0] for x in range(len(board)) ]
+    def last_row(board):
+        return [ board[x][-1] for x in range(len(board)) ]
+    while set(board[0]) == set([' ']):
+        board.pop(0)
+    while set(board[len(board) -1 ]) == set([' ']):
+        board.pop(len(board) -1)
+    while set(first_row(board)) == set([' ']):
+        for x in range(len(board)):
+            board[x].pop(0)
+    while set(last_row(board)) == set([' ']):
+        for x in range(len(board)):
+            board[x].pop(-1)
+
+def str2board(board_str):
+    # for testing
+    board_size_x = 0
+    board_size_y = 0
+    board = []
+    for line in board_str.splitlines():
+        board.append([])
+        if len(line) > board_size_y:
+            board_size_y = len(line)
+        for c in line:
+            board[board_size_x].append(c)
+        board_size_x += 1
+    for x in range(board_size_x):
+        for c in range(board_size_y - len(board[x])):
+            board[x].append(' ')
+
+    trim_board(board)
+
+    return board
+
+
 def get_board_hash(board):
     start = time.time()
     board_size_x, board_size_y = get_board_size(board)
