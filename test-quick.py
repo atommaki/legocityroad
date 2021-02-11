@@ -11,7 +11,7 @@ def solution_test(roads, expected_n_solutions, expected_boards):
     progress = (0, 100)
     solutions = [ ]
     already_tried = set([])
-    missing = []
+    missing = [ (0,0) ]
 
     board = [ [ '*' ] ]
 
@@ -42,6 +42,7 @@ def solution_test(roads, expected_n_solutions, expected_boards):
         expected_board_all_direction.append(lcr.get_right_rotated_board(m_board))
         expected_board_all_direction.append(lcr.get_twice_rotated_board(m_board))
         expected_board_all_direction.append(lcr.get_left_rotated_board(m_board))
+
 
         found = False
         for b in expected_board_all_direction:
