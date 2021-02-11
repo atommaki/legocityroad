@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from copy import deepcopy
 import time
 import sys
 import argparse
@@ -510,7 +511,7 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
             print('o', end='')
             return False
 
-        solutions.append(board)
+        solutions.append(deepcopy(board))
         print(f'\nFound a new solution! Size: {board_size_x}x{board_size_y} ({len(solutions)}, {round(progress[1])}%)')
         show_board(board)
         #print('xxxxxxxxxxxxxx')
