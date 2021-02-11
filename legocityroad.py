@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
 import time
 import sys
 import argparse
@@ -228,19 +227,31 @@ def get_updown_mirrored_board(board):
 
     return new_board
 
-def trim_board(board):
+def trim_board(board,missing):
+    if len(board) == 0:
+        return
+
     def first_row(board):
         return [ board[x][0] for x in range(len(board)) ]
     def last_row(board):
         return [ board[x][-1] for x in range(len(board)) ]
-    while set(board[0]) == set([' ']):
+
+    missing_size = len(missing)
+    while len(board) > 1 and set(board[0]) == set([' ']):
         board.pop(0)
-    while set(board[len(board) -1 ]) == set([' ']):
+        for i in range(missing_size):
+            missing[i] = ( missing[i][0]-1, missing[i][1] )
+
+    while len(board) > 1 and set(board[len(board) -1 ]) == set([' ']):
         board.pop(len(board) -1)
-    while set(first_row(board)) == set([' ']):
+
+    while len(board[0]) > 1 and set(first_row(board)) == set([' ']):
         for x in range(len(board)):
             board[x].pop(0)
-    while set(last_row(board)) == set([' ']):
+        for i in range(missing_size):
+            missing[i] = ( missing[i][0], missing[i][1]-1 )
+
+    while len(board[0]) > 1 and set(last_row(board)) == set([' ']):
         for x in range(len(board)):
             board[x].pop(-1)
 
@@ -260,7 +271,7 @@ def str2board(board_str):
         for c in range(board_size_y - len(board[x])):
             board[x].append(' ')
 
-    trim_board(board)
+    trim_board(board, [])
 
     return board
 
@@ -387,10 +398,20 @@ def extend_board_bottom(board):
     extend_time = extend_time + time.time() - start
 
 
-def put_new_item(board, x, y, item, missing):
+def put_new_item(board, x, y, item, missing, roads):
     board_size_x, board_size_y = get_board_size(board)
+    #print(f'New item is placed: {item} {x},{y}')
+
+    if   item in straights:  roads['straight'] -= 1
+    elif item in turns:      roads['turn']     -= 1
+    elif item in t_crosses:  roads['tcross']   -= 1
+    elif item in xcross:     roads['xcross']   -= 1
+
+
+    missing.remove((x,y))
 
     board[x][y] = item
+    new_missing = []
 
     if item in top_open:
         if x == 0:
@@ -401,7 +422,7 @@ def put_new_item(board, x, y, item, missing):
                 missing[i] = ( missing[i][0]+1, missing[i][1] )
         if board[x-1][y] != '*' and board[x-1][y] not in road_types:
             board[x-1][y] = '*'
-            missing.append((x-1,y))
+            new_missing.append((x-1,y))
 
     if item in bottom_open:
         if x == board_size_x -1:
@@ -409,7 +430,7 @@ def put_new_item(board, x, y, item, missing):
             board_size_x += 1
         if board[x+1][y] != '*' and board[x+1][y] not in road_types:
             board[x+1][y] = '*'
-            missing.append((x+1,y))
+            new_missing.append((x+1,y))
 
     if item in right_open:
         if y == board_size_y -1:
@@ -417,7 +438,7 @@ def put_new_item(board, x, y, item, missing):
             board_size_y += 1
         if board[x][y+1] != '*' and board[x][y+1] not in road_types:
             board[x][y+1] = '*'
-            missing.append((x,y+1))
+            new_missing.append((x,y+1))
 
     if item in left_open:
         if y == 0:
@@ -427,42 +448,65 @@ def put_new_item(board, x, y, item, missing):
             for i in range(len(missing)):
                 missing[i] = ( missing[i][0], missing[i][1]+1 )
 
+            for i in range(len(new_missing)):
+                new_missing[i] = ( new_missing[i][0], new_missing[i][1]+1 )
+
         if board[x][y-1] != '*' and board[x][y-1] not in road_types:
             board[x][y-1] = '*'
-            missing.append((x,y-1))
+            new_missing.append((x,y-1))
 
+    #print(f'new_missing: {new_missing}')
+    missing.extend(new_missing)
+    return x, y, new_missing
 
-def solve_board(progress, solutions, already_tried, missing, board, a,b, new_item, roads, used_items, min_used_items):
+def remove_item(board, x, y, item_caused_missing, missing, roads):
+    #print(f'removing item: {board[x][y]} {x},{y}, item_caused_missing: {item_caused_missing}')
+    if   board[x][y] in straights:  roads['straight'] += 1
+    elif board[x][y] in turns:      roads['turn']     += 1
+    elif board[x][y] in t_crosses:  roads['tcross']   += 1
+    elif board[x][y] in xcross:     roads['xcross']   += 1
 
+    board[x][y] = '*'
+    for mx, my in item_caused_missing:
+        board[mx][my] = ' '
+        missing.remove((mx,my))
+    missing.insert(0,(x,y))
+    trim_board(board, missing)
 
-    put_new_item(board, a, b, new_item, missing)
+def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items):
 
-    if   new_item in straights:  roads['straight'] -= 1
-    elif new_item in turns:      roads['turn']     -= 1
-    elif new_item in t_crosses:  roads['tcross']   -= 1
-    elif new_item in xcross:     roads['xcross']   -= 1
+    
+    real_a, real_b, new_missing = put_new_item(board, a, b, new_item, missing, roads)
 
     board_size_x, board_size_y = get_board_size(board)
 
+    #print('==----------------------------------------------------------------')
     #show_board(board)
     #print(missing)
+    #print('==----------------------------------------------------------------')
+
 
     if len(missing) > roads['straight'] + roads['turn'] + roads['tcross'] + roads['xcross']:
         # already too many open ends
         #print('x', end='')
+        remove_item(board, real_a, real_b, new_missing, missing, roads)
+
         return False
 
     board_hash = get_board_hash(board)
     board_all_hashes = set([board_hash]) | get_transformed_board_hashes(board)
 
-    if board_all_hashes & already_tried != set():
+    if board_all_hashes & been_there != set():
+        remove_item(board, real_a, real_b, new_missing, missing, roads)
         return False
 
-    already_tried.add(board_hash)
+    been_there.add(board_hash)
 
     if len(missing) == 0:
         # there are no open ends
+
         if used_items != min_used_items:
+            remove_item(board, real_a, real_b, new_missing, missing, roads)
             print('o', end='')
             return False
 
@@ -472,9 +516,10 @@ def solve_board(progress, solutions, already_tried, missing, board, a,b, new_ite
         #print('xxxxxxxxxxxxxx')
         #print(m_board_hash)
         #print('xxxxxxxxxxxxxx')
+        remove_item(board, real_a, real_b, new_missing, missing, roads)
         return True
 
-    x, y = missing.pop(0)
+    x, y = missing[0]
 
     #print(f' new item: {new_item} ({a},{b})')
     #print(x,y)
@@ -510,12 +555,16 @@ def solve_board(progress, solutions, already_tried, missing, board, a,b, new_ite
     if len(possible_new_items) == 0:
         # no fitting road piece
         #print('0', end='')
+        ###missing.insert(0,(x,y))
+        remove_item(board, real_a, real_b, new_missing, missing, roads)
+
         return False
 
 
     possible_new_steps = len(possible_new_items)
 
     progress_step = (progress[1] - progress[0]) / possible_new_steps
+    #print(f' x,y = {x},{y},  a,b = {a},{b}, {new_item} new_missing = {new_missing}')
 
     step = 0
     for new in possible_new_items:
@@ -524,11 +573,26 @@ def solve_board(progress, solutions, already_tried, missing, board, a,b, new_ite
                           progress[0] + progress_step * (step+1)
                         )
 
-        solve_board(next_progress, solutions, already_tried, deepcopy(missing), deepcopy(board), x, y, new, deepcopy(roads), used_items+1, min_used_items)
+        #print(f'recursive call (level = {used_items})')
+        #h1 = get_board_hash(board)
+        #b1 = deepcopy(board)
+        solve_board(next_progress, solutions, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items)
+        #h2 = get_board_hash(board)
+        #if h1 != h2:
+        #    print('board hash is changed! ======================x=x=x=x')
+        #    print('before:')
+        #    show_board(b1)
+        #    print('after:')
+        #    show_board(board)
+        #print(f'/recursive call (level = {used_items})')
 
         step += 1
 
-
+    #show_board(board)
+    ###missing.insert(0,(x,y))
+    #print(f' missing: {missing}')
+    #print(f' x,y = {x},{y},  a,b = {a},{b}, {new_item} new_missing = {new_missing}')
+    remove_item(board, real_a, real_b, new_missing, missing, roads)
 
 def main():
     ### Main
@@ -552,8 +616,8 @@ def main():
 
     progress = (0, 100)
     solutions = []
-    already_tried = set([])
-    missing = []
+    been_there = set()
+    missing = [ (0,0) ]
 
     board = [ [ '*' ] ]
 
@@ -566,7 +630,7 @@ def main():
     roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
 
 
-    solve_board(progress, solutions, already_tried, missing, board, 0, 0, '╭', roads, 1, min_used_items)
+    solve_board(progress, solutions, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items)
 
     print(f'\nNumber of solutions: { len(solutions) }')
 
@@ -575,7 +639,7 @@ def main():
     print(f' board_hash_time       = { board_hash_time }   calls: {board_hash_calls}')
     print(f' extend_time           = { extend_time }   calls: {extend_calls}')
     print()
-    print(f' size of already_tried: {sys.getsizeof(already_tried) / 1024**2} MB')
+    print(f' size of been_there: {sys.getsizeof(been_there) / 1024**2} MB')
 
 if __name__ == "__main__":
     main()
