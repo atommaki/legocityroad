@@ -4,6 +4,7 @@ from copy import deepcopy
 import time
 import sys
 import argparse
+from random import randrange
 
 road_types =  set([ '─', '│', '╭', '╮', '╰', '╯', '┼', '┤', '┴', '├', '┬' ])
 
@@ -282,8 +283,10 @@ def get_board_hash(board):
     board_size_x, board_size_y = get_board_size(board)
     if board_size_x > board_size_y:
         h = hash(tuple(tuple(x) for x in get_right_rotated_board(board)))
+        #h = str(get_right_rotated_board(board))
     else:
         h = hash(tuple(tuple(x) for x in board))
+        #h = str(board)
 
     global board_hash_calls
     board_hash_calls += 1
@@ -474,7 +477,7 @@ def remove_item(board, x, y, item_caused_missing, missing, roads):
     missing.insert(0,(x,y))
     trim_board(board, missing)
 
-def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items):
+def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent):
 
     
     real_a, real_b, new_missing = put_new_item(board, a, b, new_item, missing, roads)
@@ -494,14 +497,16 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
 
         return False
 
-    board_hash = get_board_hash(board)
-    board_all_hashes = set([board_hash]) | get_transformed_board_hashes(board)
+    if cache_percent == 100 or \
+       cache_percent != 0 and cache_percent > randrange(0,100):
+        board_hash = get_board_hash(board)
+        board_all_hashes = set([board_hash]) | get_transformed_board_hashes(board)
 
-    if board_all_hashes & been_there != set():
-        remove_item(board, real_a, real_b, new_missing, missing, roads)
-        return False
+        if board_all_hashes & been_there != set():
+            remove_item(board, real_a, real_b, new_missing, missing, roads)
+            return False
 
-    been_there.add(board_hash)
+        been_there.add(board_hash)
 
     if len(missing) == 0:
         # there are no open ends
@@ -511,8 +516,9 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
             print('o', end='')
             return False
 
-        solutions.append(deepcopy(board))
-        print(f'\nFound a new solution! Size: {board_size_x}x{board_size_y} ({len(solutions)}, {round(progress[1])}%)')
+        if board not in solutions:
+            solutions.append(deepcopy(board))
+            print(f'\nFound a new solution! Size: {board_size_x}x{board_size_y} ({len(solutions)}, {round(progress[1])}%)')
         show_board(board)
         #print('xxxxxxxxxxxxxx')
         #print(m_board_hash)
@@ -577,7 +583,7 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
         #print(f'recursive call (level = {used_items})')
         #h1 = get_board_hash(board)
         #b1 = deepcopy(board)
-        solve_board(next_progress, solutions, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items)
+        solve_board(next_progress, solutions, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items, cache_percent)
         #h2 = get_board_hash(board)
         #if h1 != h2:
         #    print('board hash is changed! ======================x=x=x=x')
@@ -599,17 +605,21 @@ def main():
     ### Main
 
     ### Arguments
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Process some integers.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--straight', type=int, action='store', default=0, help='number of straight road plates')
     parser.add_argument('--turn', type=int, action='store', default=0,     help='number of simple turn road plates')
     parser.add_argument('--tcross', type=int, action='store', default=0,   help='number of T (3 way) crossing road plates')
     parser.add_argument('--xcross', type=int, action='store', default=0,   help='number of X (4 way) crossing road plates')
+
+    parser.add_argument('--cache-percent', type=int, action='store', default=100,   help='percentage of stored already known path. (high cache -> VERY high memory usage, low cache -> slower runs)')
 
     args = parser.parse_args()
     n_straight = args.straight
     n_turn = args.turn
     n_tcross = args.tcross
     n_xcross = args.xcross
+
+    cache_percent = args.cache_percent
 
     ### /Arguments
 
@@ -631,7 +641,7 @@ def main():
     roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
 
 
-    solve_board(progress, solutions, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items)
+    solve_board(progress, solutions, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent)
 
     print(f'\nNumber of solutions: { len(solutions) }')
 
