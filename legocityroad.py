@@ -295,53 +295,73 @@ def get_board_hash(board):
 
     return h
 
-def get_transformed_board_hashes(board):
+
+def have_been_there(board, been_there):
     start = time.time()
-    hash_set = set()
+    def ret(retval):
+        global board_hash_calls
+        board_hash_calls += 1
+        global board_hash_time
+        board_hash_time = board_hash_time + time.time() - start
+        return retval
+    def check_hash(h):
+        if h in been_there:
+            return True
+        return False
+
+    board_hash = get_board_hash(board)
+    if check_hash(board_hash): return True
 
     board_size_x, board_size_y = get_board_size(board)
 
     if board_size_x > board_size_y:
         r3_board   = get_left_rotated_board(board)
-        m_board    = get_updown_mirrored_board(board)
-        mr1_board  = get_right_rotated_board(m_board)
-        mr3_board  = get_left_rotated_board(m_board)
+        if check_hash(get_board_hash(r3_board)): return True
 
-        # r1 hash is already stored (see get_board_hash())
-        hash_set.add(get_board_hash(r3_board))
-        hash_set.add(get_board_hash(mr1_board))
-        hash_set.add(get_board_hash(mr3_board))
+        m_board    = get_updown_mirrored_board(board)
+        if check_hash(get_board_hash(m_board)): return True
+
+        mr1_board  = get_right_rotated_board(m_board)
+        if check_hash(get_board_hash(mr1_board)): return True
+
+        mr3_board  = get_left_rotated_board(m_board)
+        if check_hash(get_board_hash(mr3_board)): return True
+
     elif board_size_x < board_size_y:
         r2_board   = get_twice_rotated_board(board)
-        m_board    = get_updown_mirrored_board(board)
-        mr2_board  = get_twice_rotated_board(m_board)
+        if check_hash(get_board_hash(r2_board)): return True
 
-        hash_set.add(get_board_hash(r2_board))
-        hash_set.add(get_board_hash(m_board))
-        hash_set.add(get_board_hash(mr2_board))
+        m_board    = get_updown_mirrored_board(board)
+        if check_hash(get_board_hash(m_board)): return True
+
+        mr2_board  = get_twice_rotated_board(m_board)
+        if check_hash(get_board_hash(mr2_board)): return True
+
     else: # square board
         r1_board   = get_right_rotated_board(board)
+        if check_hash(get_board_hash(r1_board)): return True
+
         r2_board   = get_twice_rotated_board(board)
+        if check_hash(get_board_hash(r2_board)): return True
+
         r3_board   = get_left_rotated_board(board)
+        if check_hash(get_board_hash(r3_board)): return True
+
         m_board    = get_updown_mirrored_board(board)
+        if check_hash(get_board_hash(m_board)): return True
+
         mr1_board  = get_right_rotated_board(m_board)
+        if check_hash(get_board_hash(mr1_board)): return True
+
         mr2_board  = get_twice_rotated_board(m_board)
+        if check_hash(get_board_hash(mr2_board)): return True
+
         mr3_board  = get_left_rotated_board(m_board)
+        if check_hash(get_board_hash(mr3_board)): return True
 
-        hash_set.add(get_board_hash(r1_board))
-        hash_set.add(get_board_hash(r2_board))
-        hash_set.add(get_board_hash(r3_board))
-        hash_set.add(get_board_hash(m_board))
-        hash_set.add(get_board_hash(mr1_board))
-        hash_set.add(get_board_hash(mr2_board))
-        hash_set.add(get_board_hash(mr3_board))
+    been_there.add(board_hash)
 
-    global board_hash_calls
-    board_hash_calls += 1
-    global board_hash_time
-    board_hash_time = board_hash_time + time.time() - start
-
-    return hash_set
+    ret(False)
 
 def show_board(board):
     board_size_x, board_size_y = get_board_size(board)
@@ -499,14 +519,9 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
 
     if cache_percent == 100 or \
        cache_percent != 0 and cache_percent > randrange(0,100):
-        board_hash = get_board_hash(board)
-        board_all_hashes = set([board_hash]) | get_transformed_board_hashes(board)
-
-        if board_all_hashes & been_there != set():
+        if have_been_there(board, been_there):
             remove_item(board, real_a, real_b, new_missing, missing, roads)
             return False
-
-        been_there.add(board_hash)
 
     if len(missing) == 0:
         # there are no open ends
