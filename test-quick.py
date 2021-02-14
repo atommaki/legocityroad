@@ -3,14 +3,19 @@
 import legocityroad as lcr
 import os
 import sys
+from multiprocessing import Process, Manager
+
 
 def solution_test(roads, expected_n_solutions, expected_boards):
 
     min_used_items = roads['straight'] + roads['turn'] + roads['tcross'] + roads['xcross']
 
+    mpman = Manager()
+
     progress = (0, 100)
-    solutions = [ ]
-    already_tried = set([])
+    solutions = mpman.list()
+    solution_hashes = mpman.dict()
+    been_there = mpman.dict()
     missing = [ (0,0) ]
 
     board = [ [ '*' ] ]
@@ -19,7 +24,7 @@ def solution_test(roads, expected_n_solutions, expected_boards):
     origstdout = sys.stdout
     sys.stdout = f
 
-    lcr.solve_board(progress, solutions, already_tried, missing, board, 0, 0, '╭', roads, 1, min_used_items)
+    lcr.solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, 100)
 
     sys.stdout = origstdout
 

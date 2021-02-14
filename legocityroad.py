@@ -5,6 +5,7 @@ import time
 import sys
 import argparse
 from random import randrange
+from multiprocessing import Process, Manager
 
 road_types =  set([ '─', '│', '╭', '╮', '╰', '╯', '┼', '┤', '┴', '├', '┬' ])
 
@@ -359,7 +360,8 @@ def have_been_there(board, been_there):
         mr3_board  = get_left_rotated_board(m_board)
         if check_hash(get_board_hash(mr3_board)): return True
 
-    been_there.add(board_hash)
+    #been_there.add(board_hash)
+    been_there[board_hash] = None
 
     ret(False)
 
@@ -424,7 +426,6 @@ def extend_board_bottom(board):
 
 def put_new_item(board, x, y, item, missing, roads):
     board_size_x, board_size_y = get_board_size(board)
-    #print(f'New item is placed: {item} {x},{y}')
 
     if   item in straights:  roads['straight'] -= 1
     elif item in turns:      roads['turn']     -= 1
@@ -479,12 +480,10 @@ def put_new_item(board, x, y, item, missing, roads):
             board[x][y-1] = '*'
             new_missing.append((x,y-1))
 
-    #print(f'new_missing: {new_missing}')
     missing.extend(new_missing)
     return x, y, new_missing
 
 def remove_item(board, x, y, item_caused_missing, missing, roads):
-    #print(f'removing item: {board[x][y]} {x},{y}, item_caused_missing: {item_caused_missing}')
     if   board[x][y] in straights:  roads['straight'] += 1
     elif board[x][y] in turns:      roads['turn']     += 1
     elif board[x][y] in t_crosses:  roads['tcross']   += 1
@@ -497,13 +496,13 @@ def remove_item(board, x, y, item_caused_missing, missing, roads):
     missing.insert(0,(x,y))
     trim_board(board, missing)
 
-def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent):
+def solve_board(progress, solutions, solution_hashes, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent):
 
-    
     real_a, real_b, new_missing = put_new_item(board, a, b, new_item, missing, roads)
 
     board_size_x, board_size_y = get_board_size(board)
 
+    #print(' -x-x-x-x-x-')
     #print('==----------------------------------------------------------------')
     #show_board(board)
     #print(missing)
@@ -531,17 +530,20 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
             print('o', end='')
             return False
 
-        if board not in solutions:
-            solutions.append(deepcopy(board))
+        if not have_been_there(board, solution_hashes):
+            solutions.append(board)
             print(f'\nFound a new solution! Size: {board_size_x}x{board_size_y} ({len(solutions)}, {round(progress[1])}%)')
-        show_board(board)
+            show_board(board)
         #print('xxxxxxxxxxxxxx')
         #print(m_board_hash)
         #print('xxxxxxxxxxxxxx')
         remove_item(board, real_a, real_b, new_missing, missing, roads)
         return True
 
+    #show_board(board)
+    #print(f' missing = {missing}')
     x, y = missing[0]
+    #print(f' x,y = {x},{y}')
 
     #print(f' new item: {new_item} ({a},{b})')
     #print(x,y)
@@ -578,8 +580,10 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
         # no fitting road piece
         #print('0', end='')
         ###missing.insert(0,(x,y))
+        #remove_item(board, real_a, real_b, new_missing, missing, roads)
+        #return False
+        #print('No item prossible')
         remove_item(board, real_a, real_b, new_missing, missing, roads)
-
         return False
 
 
@@ -589,7 +593,14 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
     #print(f' x,y = {x},{y},  a,b = {a},{b}, {new_item} new_missing = {new_missing}')
 
     step = 0
+    using_mp = False
+    th = []
+    if used_items < 3:
+        using_mp = True
+    #using_mp = False
+
     for new in possible_new_items:
+        #print(f'  try: {new}')
 
         next_progress = ( progress[0] + progress_step * step,
                           progress[0] + progress_step * (step+1)
@@ -598,7 +609,14 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
         #print(f'recursive call (level = {used_items})')
         #h1 = get_board_hash(board)
         #b1 = deepcopy(board)
-        solve_board(next_progress, solutions, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items, cache_percent)
+        if using_mp:
+            th.append('x')
+            #print(f'starting a thread (level={used_items}, new={new})')
+            th[step] = Process(target = solve_board,
+            args = (next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, deepcopy(roads), used_items+1, min_used_items, cache_percent, ))
+            th[step].start()
+        else:
+            solve_board(next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items, cache_percent)
         #h2 = get_board_hash(board)
         #if h1 != h2:
         #    print('board hash is changed! ======================x=x=x=x')
@@ -610,6 +628,10 @@ def solve_board(progress, solutions, been_there, missing, board, a,b, new_item, 
 
         step += 1
 
+    if using_mp:
+        for x in range(len(th)):
+            th[x].join()
+            #print(f'thread ended (level={used_items})')
     #show_board(board)
     ###missing.insert(0,(x,y))
     #print(f' missing: {missing}')
@@ -640,9 +662,14 @@ def main():
 
     min_used_items = n_straight + n_turn + n_tcross + n_xcross
 
+    mpman = Manager()
+
     progress = (0, 100)
-    solutions = []
-    been_there = set()
+    solutions = mpman.list()
+    solution_hashes = mpman.dict()
+    #been_there = set()
+    #been_there = {}
+    been_there = mpman.dict()
     missing = [ (0,0) ]
 
     board = [ [ '*' ] ]
@@ -656,7 +683,7 @@ def main():
     roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
 
 
-    solve_board(progress, solutions, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent)
+    solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent)
 
     print(f'\nNumber of solutions: { len(solutions) }')
 
