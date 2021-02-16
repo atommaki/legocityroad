@@ -370,12 +370,46 @@ def show_board(board):
 
     #print('-------------------------------------------')
     #print(board)
-    print('-------------------------------------------')
     for i in range(board_size_x):
         for j in range(board_size_y):
             print(board[i][j], end='')
         print()
-    print('-------------------------------------------')
+
+def show_multiple_boards(board_list):
+    print_board_list = deepcopy(board_list)
+    term_y, term_x = os.get_terminal_size()
+    space_bw_items = 3
+    while len(print_board_list) > 0:
+        current_print = []
+        width = 0
+        max_x = 0
+        while len(print_board_list) > 0:
+            board_size_x, board_size_y = get_board_size(print_board_list[0])
+            if board_size_y + width + space_bw_items < term_y:
+                current_print.append(print_board_list.pop(0))
+                width += space_bw_items + board_size_y
+                if board_size_x > max_x:
+                    max_x = board_size_x
+            else:
+                break
+        for b in current_print:
+            board_size_x, board_size_y = get_board_size(b)
+            sizestr = f'{board_size_x}x{board_size_y}'
+            print(sizestr, end='')
+            missing_space = board_size_y + space_bw_items - len(sizestr)
+            if missing_space > 0:
+                print(' ' * missing_space, end='')
+        print()
+        for x in range(max_x):
+            for b in current_print:
+                b_x, b_y = get_board_size(b)
+                if x < b_x:
+                    print(''.join(b[x]), end='')
+                else:
+                    print(' ' * b_y, end='')
+                print(' ' * space_bw_items, end='')
+            print()
+
 
 def extend_board_left(board):
     start = time.time()
