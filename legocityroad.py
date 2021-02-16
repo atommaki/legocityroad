@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 import time
+import os
 import sys
 import argparse
 from random import randrange
@@ -669,7 +670,6 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
 
         if used_items != min_used_items:
             remove_item(board, real_a, real_b, new_missing, missing, roads)
-            print('o', end='')
             return False
 
         if not have_been_there(board, solution_hashes):
@@ -780,6 +780,52 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
     #print(f' x,y = {x},{y},  a,b = {a},{b}, {new_item} new_missing = {new_missing}')
     remove_item(board, real_a, real_b, new_missing, missing, roads)
 
+def print_solution_report(solutions):
+    if len(solutions) == 0:
+        return
+    print(f' ------ All solutions ({len(solutions)}) ------')
+    solutions = deepcopy(solutions)
+    def printoutboards(name, boards):
+        if len(boards) > 0:
+            print(f' --- {name} ({len(boards)}) ---')
+            show_multiple_boards(list(boards))
+            print()
+    def remove_items(list1, list2):
+        for i2 in list2:
+            if i2 in list1:
+                list1.remove(i2)
+
+
+    sol_perfect = [ b for b in solutions if is_perfect_board(b) ]
+    remove_items(solutions, sol_perfect)
+    printoutboards('Perfect (fully filled rectangle, no holes)', sol_perfect)
+
+    sol_rectangle = [ b for b in solutions if is_rectangle_board(b) ]
+    remove_items(solutions, sol_rectangle)
+    printoutboards('Rectangle with hole(s)', sol_rectangle)
+
+    sol_almost_rectangle = [ b for b in solutions if is_almost_rectangle_board(b) ]
+    remove_items(solutions, sol_almost_rectangle)
+    sol_almost_rectangle_no_holes = [ b for b in sol_almost_rectangle if not is_hole_on_board(b) ]
+    remove_items(sol_almost_rectangle, sol_almost_rectangle_no_holes)
+    printoutboards('Almost rectangle (rectangle with bays) without hole(s)', sol_almost_rectangle_no_holes)
+    printoutboards('Almost rectangle with hole(s)', sol_almost_rectangle)
+
+    sol_symm = [ b for b in solutions if is_symmetric_board(b) ]
+    remove_items(solutions, sol_symm)
+    sol_symm_no_holes = [ b for b in sol_symm if not is_hole_on_board(b) ]
+    remove_items(sol_symm, sol_symm_no_holes)
+    printoutboards('Non rectangle, symmetric shapes without hole(s)', sol_symm_no_holes)
+    printoutboards('Non rectangle, symmetric shapes with hole(s)', sol_symm)
+
+    sol_irreg_no_holes = [ b for b in solutions if not is_hole_on_board(b) ]
+    remove_items(solutions, sol_irreg_no_holes)
+    printoutboards('Irregular shapes without holes', sol_irreg_no_holes)
+
+    printoutboards('Irregular shapes with holes', solutions)
+
+
+
 def main():
     ### Main
 
@@ -827,6 +873,10 @@ def main():
 
     solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent)
 
+    print()
+    if len(solutions) > 1:
+        print_solution_report(solutions)
+
     print(f'\nNumber of solutions: { len(solutions) }')
 
     print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
@@ -835,6 +885,7 @@ def main():
     print(f' extend_time           = { extend_time }   calls: {extend_calls}')
     print()
     print(f' size of been_there: {sys.getsizeof(been_there) / 1024**2} MB')
+
 
 if __name__ == "__main__":
     main()

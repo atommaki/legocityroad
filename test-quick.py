@@ -4,6 +4,8 @@ import legocityroad as lcr
 import os
 import sys
 from multiprocessing import Process, Manager
+import time
+from termcolor import colored
 
 
 def solution_test(roads, expected_n_solutions, expected_boards):
@@ -24,9 +26,10 @@ def solution_test(roads, expected_n_solutions, expected_boards):
     origstdout = sys.stdout
     sys.stdout = f
 
-    lcr.solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, 100)
+    lcr.solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, 0)
 
     sys.stdout = origstdout
+
 
     if len(solutions) != expected_n_solutions:
         print('len(solutions) != expected_n_solutions')
@@ -55,7 +58,7 @@ def solution_test(roads, expected_n_solutions, expected_boards):
                 found = True
                 break
         if not found:
-            print('One or more missing board hashes.')
+            print('One or more board is missing from solutions.')
             return False
 
     return True
@@ -96,6 +99,33 @@ testcases = [
           ╰─╯
         '''
         ]
+    },
+
+    {
+    'roads': { 'straight': 3, 'turn': 6, 'tcross': 2, 'xcross': 2},
+    'expected_n_solutions': 3,
+    'expected_boards_str' : [
+        '''
+         ╭╮
+        ╭┼┤
+        │││
+        ╰┼┤
+         ╰╯
+        ''',
+        '''
+         ╭╮
+        ╭┼┤
+        │││
+        ├┼╯
+        ╰╯
+        ''',
+        '''
+         ╭┬╮
+        ╭┼┼╯
+        │││
+        ╰┴╯
+        '''
+        ]
      }
 ]
 
@@ -116,11 +146,19 @@ for testcase in testcases:
 
 
     print(f'Test case {testcodename} starts here.')
-    if solution_test(roads, expected_n_solutions, expected_boards ):
-        print(f'Test case {testcodename}: OK')
+    test_start = time.time()
+    test_passed = solution_test(testcase['roads'],
+                     testcase['expected_n_solutions'],
+                     expected_boards
+                      )
+    test_end = time.time()
+    test_time = test_end - test_start
+    if test_passed:
+        test_result = colored('OK', 'green')
     else:
-        print(f'Test case {testcodename}: FAIL')
+        test_result = colored('FAIL', 'red')
         exitcode += 1
+    print(f'Test case {testcodename}: {test_result} ({round(test_time,3)}s)')
 
 
 if exitcode != 0:
