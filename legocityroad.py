@@ -530,6 +530,114 @@ def remove_item(board, x, y, item_caused_missing, missing, roads):
     missing.insert(0,(x,y))
     trim_board(board, missing)
 
+def is_almost_rectangle_board(board):
+    # True when the board corners are roads (or '*'), but allows holes and
+    # bays on the edges
+    board_size_x, board_size_y = get_board_size(board)
+    n_space = 0
+    for c in [ board[0][0],
+               board[0][board_size_y-1],
+               board[board_size_x-1][0],
+               board[board_size_x-1][board_size_y-1] ]:
+        if c == ' ':
+            n_space += 1
+    if n_space == 0:
+        return True
+    else:
+        return False
+
+def is_rectangle_board(board):
+    # True when the board edges are roads (or '*'), but allows holes inside
+    board_size_x, board_size_y = get_board_size(board)
+    for x in range(board_size_x):
+        if board[x][0] == ' ' or  board[x][board_size_y-1] == ' ':
+            return False
+    for y in range(board_size_y):
+        if board[0][y] == ' ' or  board[board_size_x-1][y] == ' ':
+            return False
+
+    return True
+
+def is_hole(board,x,y):
+    # True when the x,y place is part of a hole
+    board_size_x, board_size_y = get_board_size(board)
+    bubble_inner = set()
+    bubble_edge = set([(x,y)])
+    out = False
+    while len(bubble_edge) > 0 and not out:
+        next_bubble_edge = set()
+        for a,b in list(bubble_edge):
+            if a == 0 or a == board_size_x-1 or b == 0 or b == board_size_y-1:
+                out = True
+                break
+            if board[a][b+1] == ' ': next_bubble_edge.add((a,b+1))
+            if board[a][b-1] == ' ': next_bubble_edge.add((a,b-1))
+            if board[a+1][b] == ' ': next_bubble_edge.add((a+1,b))
+            if board[a-1][b] == ' ': next_bubble_edge.add((a-1,b))
+        bubble_edge = next_bubble_edge - bubble_inner
+        bubble_inner = next_bubble_edge | bubble_inner
+    return not out
+
+def is_hole_on_board(board):
+    # True when there is a hole on the board (hole is completely 
+    # surrounded by roads (or *))
+    board_size_x, board_size_y = get_board_size(board)
+    for x in range(1, board_size_x - 1):
+        for y in range(1, board_size_y - 1):
+            if board[x][y] == ' ' and is_hole(board,x,y):
+                return True
+    return False
+
+def is_perfect_board(board):
+    # True when the boaard is fully filled by roads (or '*')
+    # (same as rectangle with no holes)
+    board_size_x, board_size_y = get_board_size(board)
+    for x in range(board_size_x):
+        for y in range(board_size_y):
+            if board[x][y] == ' ':
+                return False
+    return True
+
+def is_symmetric_board(board):
+
+    board_size_x, board_size_y = get_board_size(board)
+
+    if board_size_x != board_size_y:
+        #r2
+        if get_twice_rotated_board(board)  == board: return True
+
+        m_board = get_updown_mirrored_board(board)
+        if m_board == board: return True
+
+        #mr2
+        if get_twice_rotated_board(m_board) == board: return True
+
+    else: # square board
+        #r1
+        if get_right_rotated_board(board) == board: return True
+
+        #r2
+        if get_twice_rotated_board(board) == board: return True
+
+        #r3
+        if get_left_rotated_board(board) == board: return True
+
+        m_board = get_updown_mirrored_board(board)
+        if m_board == board: return True
+
+        #mr1
+        if get_right_rotated_board(m_board) == board: return True
+
+        #mr2
+        if get_twice_rotated_board(m_board) == board: return True
+
+        #mr3
+        if get_left_rotated_board(m_board) == board: return True
+
+    return False
+
+
+
 def solve_board(progress, solutions, solution_hashes, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent):
 
     real_a, real_b, new_missing = put_new_item(board, a, b, new_item, missing, roads)
