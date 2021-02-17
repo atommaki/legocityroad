@@ -380,6 +380,10 @@ def show_multiple_boards(board_list):
     print_board_list = deepcopy(board_list)
     term_y, term_x = os.get_terminal_size()
     space_bw_items = 3
+    for i in range(len(print_board_list)):
+        board_size_x, board_size_y = get_board_size(print_board_list[i])
+        if board_size_x > board_size_y:
+            print_board_list[i] = get_right_rotated_board(print_board_list[i])
     while len(print_board_list) > 0:
         current_print = []
         width = 0
