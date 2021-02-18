@@ -100,6 +100,9 @@ twice_rotated_plate = {
                 ' ': ' '
              }
 
+weight =  { '─': 3,  '│': 3,  '╭': 1,  '╮': 1,  '╰': 1, '╯': 1,
+            '┼': 24, '┤': 8,  '┴': 8,  '├': 8,  '┬': 8, ' ': 0,
+            '*': 0 }
 
 
 #n_straight = 4
@@ -215,14 +218,33 @@ def get_updown_mirrored_board(board):
     board_size_y = len(board[0])
     for i in range(board_size_x):
         new_board.append([])
-        #for j in range(len(board[i])):
         for j in range(board_size_y):
             new_board[i].append(' ')
 
     for i in range(board_size_x):
-        #for j in range(len(board[i])):
         for j in range(board_size_y):
             new_board[board_size_x-1-i][j] = updown_mirrored_plate[board[i][j]]
+
+    global mirrored_board_calls
+    mirrored_board_calls += 1
+    global mirrored_board_time
+    mirrored_board_time = mirrored_board_time + time.time() - start
+
+    return new_board
+
+def get_rightleft_mirrored_board(board):
+    start = time.time()
+    new_board = []
+    board_size_x = len(board)
+    board_size_y = len(board[0])
+    for i in range(board_size_x):
+        new_board.append([])
+        for j in range(board_size_y):
+            new_board[i].append(' ')
+
+    for i in range(board_size_x):
+        for j in range(board_size_y):
+            new_board[i][board_size_y-1-j] = rightleft_mirrored_plate[board[i][j]]
 
     global mirrored_board_calls
     mirrored_board_calls += 1
@@ -376,14 +398,51 @@ def show_board(board):
             print(board[i][j], end='')
         print()
 
+def get_center_of_mass(board):
+    # artificial center of mass to help rotating and ordering
+    board_size_x, board_size_y = get_board_size(board)
+    x_center = 0
+    y_center = 0
+    total_weight = 0
+    for x in range(board_size_x):
+        for y in range(board_size_y):
+            x_center = x_center + (x+1) * weight[board[x][y]]
+            y_center = y_center + (y+1) * weight[board[x][y]]
+            total_weight = total_weight + weight[board[x][y]]
+    x_center = x_center / total_weight - 0.5
+    y_center = y_center / total_weight - 0.5
+
+    return x_center, y_center, total_weight
+
+
+def rotate_and_order(board_list):
+    # tries to make some kind of order, hoping the similar boards will be
+    # next to eacho other (also rotates boards into "landscape mode")
+    board_order = []
+    for i in range(len(board_list)):
+        board_size_x, board_size_y = get_board_size(board_list[i])
+        if board_size_x > board_size_y:
+            board_list[i] = get_right_rotated_board(board_list[i])
+            board_size_x, board_size_y = get_board_size(board_list[i])
+        x_cg, y_cg, w = get_center_of_mass(board_list[i])
+        if x_cg < board_size_x / 2: # move CG down
+            #print('updown (x)')
+            board_list[i] = get_updown_mirrored_board(board_list[i])
+            x_cg = board_size_x - x_cg
+        if y_cg < board_size_y / 2: # move CG right
+            #print('rightleft (y)')
+            board_list[i] = get_rightleft_mirrored_board(board_list[i])
+            y_cg = board_size_y - y_cg
+        board_order.append(board_size_x * 10**9 + board_size_y * 10**7 +
+                           round(x_cg,3) * 10**5 + round(y_cg,3))
+
+    board_list[:] = [ b for _,b in sorted(zip(board_order,board_list)) ]
+
 def show_multiple_boards(board_list):
     print_board_list = deepcopy(board_list)
     term_y, term_x = os.get_terminal_size()
     space_bw_items = 3
-    for i in range(len(print_board_list)):
-        board_size_x, board_size_y = get_board_size(print_board_list[i])
-        if board_size_x > board_size_y:
-            print_board_list[i] = get_right_rotated_board(print_board_list[i])
+    rotate_and_order(print_board_list)
     while len(print_board_list) > 0:
         current_print = []
         width = 0
