@@ -4,6 +4,7 @@ from copy import deepcopy
 import time
 import os
 import sys
+import signal
 import argparse
 from random import randrange
 from multiprocessing import Process, Manager
@@ -951,5 +952,6 @@ def main():
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
     main()
 
