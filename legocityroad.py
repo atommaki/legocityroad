@@ -887,7 +887,13 @@ def print_solution_report(solutions):
 
     printoutboards('Irregular shapes with holes', solutions)
 
-
+def remove_duplicated_boards(board_list):
+    board_hash_set = dict()
+    new_list = []
+    for b in board_list:
+        if not have_been_there(b, board_hash_set):
+            new_list.append(b)
+    return new_list
 
 def main():
     ### Main
@@ -937,11 +943,16 @@ def main():
 
     roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
 
-    sema = Semaphore(multiprocessing.cpu_count())
+    sema = Semaphore(16 * multiprocessing.cpu_count())
 
-    solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent, use_mp, sema)
+    solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent, use_mp, sema, False)
 
     print()
+
+    # This is a workaround. There is a racecondition in MP, different processes
+    # can put the same solution into the list (even they check it before...):
+    solutions = remove_duplicated_boards(solutions)
+
     if len(solutions) > 1:
         print_solution_report(solutions)
 
