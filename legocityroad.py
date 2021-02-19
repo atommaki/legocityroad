@@ -899,7 +899,7 @@ def main():
     parser.add_argument('--tcross', type=int, action='store', default=0,   help='number of T (3 way) crossing road plates')
     parser.add_argument('--xcross', type=int, action='store', default=0,   help='number of X (4 way) crossing road plates')
 
-    parser.add_argument('--cache-percent', type=int, action='store', default=100,   help='percentage of stored already known path. (high cache -> VERY high memory usage, low cache -> slower runs)')
+    parser.add_argument('--cache-percent', type=int, action='store', default=0,   help='percentage of stored already known path. Doesnt\'t work very well in multiprocessing (which is enabled by default), but reduce search time for single process runs (high cache -> VERY high memory usage, low cache -> slower runs), see the --no-mp option')
     parser.add_argument('--no-mp', action='store_true', help='disable multiprocessing')
 
     args = parser.parse_args()
