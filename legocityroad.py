@@ -893,7 +893,7 @@ def main():
     ### Main
 
     ### Arguments
-    parser = argparse.ArgumentParser(description='Process some integers.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description='Gives you all the combinations of closed roads (meaning: no open ends) what you can build from your Lego City road plates. Use the options bellow to tell how many boards you have.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--straight', type=int, action='store', default=0, help='number of straight road plates')
     parser.add_argument('--turn', type=int, action='store', default=0,     help='number of simple turn road plates')
     parser.add_argument('--tcross', type=int, action='store', default=0,   help='number of T (3 way) crossing road plates')
@@ -927,11 +927,13 @@ def main():
 
     board = [ [ '*' ] ]
 
-    print(f'n_straight = { n_straight }')
-    print(f'n_turn     = { n_turn }')
-    print(f'n_tcross   = { n_tcross }')
-    print(f'n_xcross   = { n_xcross }')
-    print(f'total      = { n_straight + n_turn + n_tcross + n_xcross}')
+    print(' Number of plates:')
+    print(f'    straight = { n_straight }')
+    print(f'    turn     = { n_turn }')
+    print(f'    T-cross  = { n_tcross }')
+    print(f'    X-cross  = { n_xcross }')
+    print(f'    total    = { n_straight + n_turn + n_tcross + n_xcross}')
+    print()
 
     roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
 
@@ -943,14 +945,12 @@ def main():
     if len(solutions) > 1:
         print_solution_report(solutions)
 
-    print(f'\nNumber of solutions: { len(solutions) }')
-
-    print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
-    print(f' mirrored_board_time   = { mirrored_board_time }   calls: {mirrored_board_calls}')
-    print(f' board_hash_time       = { board_hash_time }   calls: {board_hash_calls}')
-    print(f' extend_time           = { extend_time }   calls: {extend_calls}')
-    print()
-    print(f' size of been_there: {sys.getsizeof(been_there) / 1024**2} MB')
+    #print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
+    #print(f' mirrored_board_time   = { mirrored_board_time }   calls: {mirrored_board_calls}')
+    #print(f' board_hash_time       = { board_hash_time }   calls: {board_hash_calls}')
+    #print(f' extend_time           = { extend_time }   calls: {extend_calls}')
+    #print()
+    #print(f' size of been_there: {sys.getsizeof(been_there) / 1024**2} MB')
 
 
 if __name__ == "__main__":
