@@ -7,7 +7,8 @@ import sys
 import signal
 import argparse
 from random import randrange
-from multiprocessing import Process, Manager
+import multiprocessing
+from multiprocessing import Process, Manager, Semaphore
 
 road_types =  set([ '─', '│', '╭', '╮', '╰', '╯', '┼', '┤', '┴', '├', '┬' ])
 
@@ -703,7 +704,7 @@ def is_symmetric_board(board):
 
 
 
-def solve_board(progress, solutions, solution_hashes, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent):
+def solve_board(progress, solutions, solution_hashes, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent, use_mp, sema):
 
     real_a, real_b, new_missing = put_new_item(board, a, b, new_item, missing, roads)
 
@@ -799,11 +800,9 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
     #print(f' x,y = {x},{y},  a,b = {a},{b}, {new_item} new_missing = {new_missing}')
 
     step = 0
-    using_mp = False
-    th = []
-    if used_items < 3:
-        using_mp = True
-    #using_mp = False
+    mp_proc = []
+    mp_really_used = False
+
 
     for new in possible_new_items:
         #print(f'  try: {new}')
@@ -815,14 +814,14 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
         #print(f'recursive call (level = {used_items})')
         #h1 = get_board_hash(board)
         #b1 = deepcopy(board)
-        if using_mp:
-            th.append('x')
-            #print(f'starting a thread (level={used_items}, new={new})')
-            th[step] = Process(target = solve_board,
-            args = (next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, deepcopy(roads), used_items+1, min_used_items, cache_percent, ))
-            th[step].start()
+        if mp_really_used or use_mp and sema.acquire(block = False):
+            if mp_really_used:
+                sema.acquire(block = True)
+            mp_proc.append(Process(target = solve_board,
+            args = (next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, deepcopy(roads), used_items+1, min_used_items, cache_percent, use_mp, sema, )))
+            mp_proc[-1].start()
         else:
-            solve_board(next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items, cache_percent)
+            solve_board(next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items, cache_percent, use_mp, sema)
         #h2 = get_board_hash(board)
         #if h1 != h2:
         #    print('board hash is changed! ======================x=x=x=x')
@@ -834,10 +833,10 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
 
         step += 1
 
-    if using_mp:
-        for x in range(len(th)):
-            th[x].join()
-            #print(f'thread ended (level={used_items})')
+    if use_mp:
+        for mpp in mp_proc:
+            mpp.join()
+            sema.release()
     #show_board(board)
     ###missing.insert(0,(x,y))
     #print(f' missing: {missing}')
@@ -901,12 +900,14 @@ def main():
     parser.add_argument('--xcross', type=int, action='store', default=0,   help='number of X (4 way) crossing road plates')
 
     parser.add_argument('--cache-percent', type=int, action='store', default=100,   help='percentage of stored already known path. (high cache -> VERY high memory usage, low cache -> slower runs)')
+    parser.add_argument('--no-mp', action='store_true', help='disable multiprocessing')
 
     args = parser.parse_args()
     n_straight = args.straight
     n_turn = args.turn
     n_tcross = args.tcross
     n_xcross = args.xcross
+    use_mp = not args.no_mp
 
     cache_percent = args.cache_percent
 
@@ -934,8 +935,9 @@ def main():
 
     roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
 
+    sema = Semaphore(multiprocessing.cpu_count())
 
-    solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent)
+    solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent, use_mp, sema)
 
     print()
     if len(solutions) > 1:
