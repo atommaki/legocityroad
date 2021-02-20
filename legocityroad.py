@@ -704,7 +704,7 @@ def is_symmetric_board(board):
 
 
 
-def solve_board(progress, solutions, solution_hashes, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent, use_mp, sema):
+def solve_board(progress, solutions, solution_hashes, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent, use_mp, sema, sema_release):
 
     real_a, real_b, new_missing = put_new_item(board, a, b, new_item, missing, roads)
 
@@ -721,13 +721,14 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
         # already too many open ends
         #print('x', end='')
         remove_item(board, real_a, real_b, new_missing, missing, roads)
-
+        if sema_release: sema.release()
         return False
 
     if cache_percent == 100 or \
        cache_percent != 0 and cache_percent > randrange(0,100):
         if have_been_there(board, been_there):
             remove_item(board, real_a, real_b, new_missing, missing, roads)
+            if sema_release: sema.release()
             return False
 
     if len(missing) == 0:
@@ -735,6 +736,7 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
 
         if used_items != min_used_items:
             remove_item(board, real_a, real_b, new_missing, missing, roads)
+            if sema_release: sema.release()
             return False
 
         if not have_been_there(board, solution_hashes):
@@ -745,6 +747,7 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
         #print(m_board_hash)
         #print('xxxxxxxxxxxxxx')
         remove_item(board, real_a, real_b, new_missing, missing, roads)
+        if sema_release: sema.release()
         return True
 
     #show_board(board)
@@ -791,6 +794,7 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
         #return False
         #print('No item prossible')
         remove_item(board, real_a, real_b, new_missing, missing, roads)
+        if sema_release: sema.release()
         return False
 
 
@@ -801,8 +805,6 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
 
     step = 0
     mp_proc = []
-    mp_really_used = False
-
 
     for new in possible_new_items:
         #print(f'  try: {new}')
@@ -814,14 +816,12 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
         #print(f'recursive call (level = {used_items})')
         #h1 = get_board_hash(board)
         #b1 = deepcopy(board)
-        if mp_really_used or use_mp and sema.acquire(block = False):
-            if mp_really_used:
-                sema.acquire(block = True)
+        if use_mp and sema.acquire(block = False):
             mp_proc.append(Process(target = solve_board,
-            args = (next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, deepcopy(roads), used_items+1, min_used_items, cache_percent, use_mp, sema, )))
+                                   args = (next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, deepcopy(roads), used_items+1, min_used_items, cache_percent, use_mp, sema, True )))
             mp_proc[-1].start()
         else:
-            solve_board(next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items, cache_percent, use_mp, sema)
+            solve_board(next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items, cache_percent, use_mp, sema, False)
         #h2 = get_board_hash(board)
         #if h1 != h2:
         #    print('board hash is changed! ======================x=x=x=x')
@@ -833,15 +833,12 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
 
         step += 1
 
-    if use_mp:
-        for mpp in mp_proc:
-            mpp.join()
-            sema.release()
-    #show_board(board)
-    ###missing.insert(0,(x,y))
-    #print(f' missing: {missing}')
-    #print(f' x,y = {x},{y},  a,b = {a},{b}, {new_item} new_missing = {new_missing}')
     remove_item(board, real_a, real_b, new_missing, missing, roads)
+
+    if sema_release:
+        sema.release()
+    for mpp in mp_proc:
+        mpp.join()
 
 def print_solution_report(solutions):
     if len(solutions) == 0:
@@ -906,6 +903,7 @@ def main():
     parser.add_argument('--xcross', type=int, action='store', default=0,   help='number of X (4 way) crossing road plates')
 
     parser.add_argument('--cache-percent', type=int, action='store', default=0,   help='percentage of stored already known path. Doesnt\'t work very well in multiprocessing (which is enabled by default), but reduce search time for single process runs (high cache -> VERY high memory usage, low cache -> slower runs), see the --no-mp option')
+    
     parser.add_argument('--no-mp', action='store_true', help='disable multiprocessing')
 
     args = parser.parse_args()
@@ -943,7 +941,7 @@ def main():
 
     roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
 
-    sema = Semaphore(16 * multiprocessing.cpu_count())
+    sema = Semaphore( multiprocessing.cpu_count())
 
     solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent, use_mp, sema, False)
 
