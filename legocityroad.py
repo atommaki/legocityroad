@@ -717,7 +717,9 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
     #print('==----------------------------------------------------------------')
 
 
-    if len(missing) > roads['straight'] + roads['turn'] + roads['tcross'] + roads['xcross']:
+    all_roads_left = roads['straight'] + roads['turn'] + roads['tcross'] + roads['xcross']
+
+    if len(missing) > all_roads_left:
         # already too many open ends
         #print('x', end='')
         remove_item(board, real_a, real_b, new_missing, missing, roads)
@@ -816,7 +818,7 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
         #print(f'recursive call (level = {used_items})')
         #h1 = get_board_hash(board)
         #b1 = deepcopy(board)
-        if use_mp and sema.acquire(block = False):
+        if use_mp and used_items < 4 and sema.acquire(block = False):
             mp_proc.append(Process(target = solve_board,
                                    args = (next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, deepcopy(roads), used_items+1, min_used_items, cache_percent, use_mp, sema, True )))
             mp_proc[-1].start()
