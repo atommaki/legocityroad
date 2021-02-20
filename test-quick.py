@@ -28,7 +28,7 @@ def solution_test(roads, expected_n_solutions, expected_boards, use_mp):
     sys.stdout = f
     sema = Semaphore(multiprocessing.cpu_count())
 
-    lcr.solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, 0, use_mp, sema)
+    lcr.solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, 0, use_mp, sema, False)
 
     sys.stdout = origstdout
 
