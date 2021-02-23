@@ -13,22 +13,13 @@ def solution_test(roads, expected_n_solutions, expected_boards, use_mp):
 
     min_used_items = roads['straight'] + roads['turn'] + roads['tcross'] + roads['xcross']
 
-    mpman = Manager()
-
-    progress = (0, 100)
-    solutions = mpman.list()
-    solution_hashes = mpman.dict()
-    been_there = mpman.dict()
-    missing = [ (0,0) ]
-
-    board = [ [ '*' ] ]
-
     f = open(os.devnull, 'w')
     origstdout = sys.stdout
     sys.stdout = f
     sema = Semaphore(multiprocessing.cpu_count())
+    cache_percent = 0
 
-    lcr.solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, 0, use_mp, sema, False)
+    solutions = lcr.solve_board_wrapper(roads, min_used_items, cache_percent, use_mp)
 
     sys.stdout = origstdout
 

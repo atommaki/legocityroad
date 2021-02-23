@@ -117,31 +117,20 @@ weight =  { '─': 3,  '│': 3,  '╭': 1,  '╮': 1,  '╰': 1, '╯': 1,
 #n_tcross   = 6
 #n_xcross   = 2
 
-#n_straight = 6
+#n_straight = 6 # ~55s, 0 solutions
+#n_turn     = 4
+#n_tcross   = 4
+#n_xcross   = 2
+
+#n_straight = 6 # ~20s, 3 solutions
 #n_turn     = 4
 #n_tcross   = 4
 #n_xcross   = 1
 
-#n_straight = 4 # ~7sec, 7 solutions
+#n_straight = 4 # ~7s, 7 solutions
 #n_turn     = 6
 #n_tcross   = 2
 #n_xcross   = 2
-
-#n_straight = 3
-#n_turn     = 6
-#n_tcross   = 2
-#n_xcross   = 2
-
-#n_straight = 2
-#n_turn     = 12
-#n_tcross   = 0
-#n_xcross   = 0
-
-#n_straight = 3
-#n_turn     = 4
-#n_tcross   = 2
-#n_xcross   = 0
-
 
 
 rotated_board_time = 0.0
@@ -842,6 +831,28 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
     for mpp in mp_proc:
         mpp.join()
 
+
+def solve_board_wrapper(roads, min_used_items, cache_percent, use_mp):
+    mpman = Manager()
+    solutions = mpman.list()
+
+
+    progress = (0, 100)
+    solution_hashes = mpman.dict()
+    #been_there = set()
+    #been_there = {}
+    been_there = mpman.dict()
+    missing = [ (0,0) ]
+
+    board = [ [ '*' ] ]
+
+    sema = Semaphore( multiprocessing.cpu_count())
+
+    solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent, use_mp, sema, False)
+
+    return solutions
+
+
 def print_solution_report(solutions):
     if len(solutions) == 0:
         return
@@ -919,20 +930,6 @@ def main():
 
     ### /Arguments
 
-    min_used_items = n_straight + n_turn + n_tcross + n_xcross
-
-    mpman = Manager()
-
-    progress = (0, 100)
-    solutions = mpman.list()
-    solution_hashes = mpman.dict()
-    #been_there = set()
-    #been_there = {}
-    been_there = mpman.dict()
-    missing = [ (0,0) ]
-
-    board = [ [ '*' ] ]
-
     print(' Number of plates:')
     print(f'    straight = { n_straight }')
     print(f'    turn     = { n_turn }')
@@ -942,10 +939,9 @@ def main():
     print()
 
     roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
+    min_used_items = n_straight + n_turn + n_tcross + n_xcross
 
-    sema = Semaphore( multiprocessing.cpu_count())
-
-    solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent, use_mp, sema, False)
+    solutions = solve_board_wrapper(roads, min_used_items, cache_percent, use_mp)
 
     print()
 
@@ -955,6 +951,8 @@ def main():
 
     if len(solutions) > 1:
         print_solution_report(solutions)
+    elif len(solutions) == 0:
+        print('There is no solution for this road set!')
 
     #print(f' rotated_board_time    = { rotated_board_time }   calls: {rotated_board_calls}')
     #print(f' mirrored_board_time   = { mirrored_board_time }   calls: {mirrored_board_calls}')
