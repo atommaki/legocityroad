@@ -107,12 +107,12 @@ weight =  { '─': 3,  '│': 3,  '╭': 1,  '╮': 1,  '╰': 1, '╯': 1,
             '*': 0 }
 
 
-#n_straight = 4
+#n_straight = 4 # ~5h, 168 solutions
 #n_turn     = 6
 #n_tcross   = 6
 #n_xcross   = 4
 
-#n_straight = 4 # ~7h runtime, ~10GB RAM, 781 solution
+#n_straight = 4 # ~40m, 781 solutions
 #n_turn     = 6
 #n_tcross   = 6
 #n_xcross   = 2
@@ -122,7 +122,7 @@ weight =  { '─': 3,  '│': 3,  '╭': 1,  '╮': 1,  '╰': 1, '╯': 1,
 #n_tcross   = 4
 #n_xcross   = 1
 
-#n_straight = 4 # ~55sec, 7 solutions
+#n_straight = 4 # ~7sec, 7 solutions
 #n_turn     = 6
 #n_tcross   = 2
 #n_xcross   = 2
@@ -818,7 +818,7 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
         #print(f'recursive call (level = {used_items})')
         #h1 = get_board_hash(board)
         #b1 = deepcopy(board)
-        if use_mp and used_items < 4 and sema.acquire(block = False):
+        if use_mp and used_items < 5 and sema.acquire(block = False):
             mp_proc.append(Process(target = solve_board,
                                    args = (next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, deepcopy(roads), used_items+1, min_used_items, cache_percent, use_mp, sema, True )))
             mp_proc[-1].start()
@@ -905,7 +905,7 @@ def main():
     parser.add_argument('--xcross', type=int, action='store', default=0,   help='number of X (4 way) crossing road plates')
 
     parser.add_argument('--cache-percent', type=int, action='store', default=0,   help='percentage of stored already known path. Doesnt\'t work very well in multiprocessing (which is enabled by default), but reduce search time for single process runs (high cache -> VERY high memory usage, low cache -> slower runs), see the --no-mp option')
-    
+
     parser.add_argument('--no-mp', action='store_true', help='disable multiprocessing')
 
     args = parser.parse_args()
