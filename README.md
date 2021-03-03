@@ -4,7 +4,11 @@
 ![LegoCityRoad.jpg](resources/LegoCityRoad_small.jpg)
 
 ##### Table of Contents  
-[Headers](#headers)
+* [Introduction](#introduction)
+* [Usage and examples](#usage-and-examples)
+  * [The most simple](#the-most-simple)
+  * [A reasonable size set](#a-reasonable-size-set)
+* [Performance](#performance)
 
 ## Introduction
 
