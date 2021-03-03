@@ -13,10 +13,10 @@ legocityroad.py is a python script building up all the possible combinations of 
 There are 4 types of plates the strait, the simple turn, the T crossing and the 4 way crossing (called X crossing from here)
 
 Use the following options to tell the script what plates you have:
- * --straight <n>
- * --turn <n>
- * --tcross <n>
- * --xcross <n>
+ * --straight &lt;n&gt;
+ * --turn &lt;n&gt;
+ * --tcross &lt;n&gt;
+ * --xcross &lt;n&gt;
 
 The output will be a unicode text, where every road plate is one character:
 ```
