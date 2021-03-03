@@ -26,7 +26,7 @@ The output will be a unicode text, where every road plate is one character:
 
 You need at least 4 turns to make a closed road
 
-'''
+```
 $ ./legocityroad.py  --turn 4
  Number of plates:
     straight = 0
@@ -39,10 +39,10 @@ $ ./legocityroad.py  --turn 4
 Found a new solution! Size: 2x2 (1, 75%)
 ╭╮
 ╰╯
-'''
+```
 
-### Something reasonable size set
-'''
+### A reasonable size set
+```
 ./legocityroad.py --straight 4 --turn 6 --tcross 2 --xcross 2
  Number of plates:
     straight = 4
@@ -111,6 +111,6 @@ Found a new solution! Size: 3x6 (7)
 ╭──┼┼╯   ╭──┼┼╮     ││
 ╰──┴╯    ╰──┴┴╯   ╭─┼┼╮
                   ╰─┴┴╯
-'''
+```
 
 
