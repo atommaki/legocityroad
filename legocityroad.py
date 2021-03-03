@@ -9,7 +9,9 @@ import argparse
 from random import randrange
 import multiprocessing
 from multiprocessing import Process, Manager, Semaphore
+import logging
 
+### Road types, mirrored and rotated plates {{{
 road_types =  set([ '─', '│', '╭', '╮', '╰', '╯', '┼', '┤', '┴', '├', '┬' ])
 
 left_open =   set([ '─', '╮', '╯', '┼', '┤', '┴', '┬' ])
@@ -105,33 +107,7 @@ twice_rotated_plate = {
 weight =  { '─': 3,  '│': 3,  '╭': 1,  '╮': 1,  '╰': 1, '╯': 1,
             '┼': 24, '┤': 8,  '┴': 8,  '├': 8,  '┬': 8, ' ': 0,
             '*': 0 }
-
-
-#n_straight = 4 # ~5h, 168 solutions
-#n_turn     = 6
-#n_tcross   = 6
-#n_xcross   = 4
-
-#n_straight = 4 # ~40m, 781 solutions
-#n_turn     = 6
-#n_tcross   = 6
-#n_xcross   = 2
-
-#n_straight = 6 # ~55s, 0 solutions
-#n_turn     = 4
-#n_tcross   = 4
-#n_xcross   = 2
-
-#n_straight = 6 # ~20s, 3 solutions
-#n_turn     = 4
-#n_tcross   = 4
-#n_xcross   = 1
-
-#n_straight = 4 # ~7s, 7 solutions
-#n_turn     = 6
-#n_tcross   = 2
-#n_xcross   = 2
-
+### }}}
 
 rotated_board_time = 0.0
 rotated_board_calls = 0
@@ -142,15 +118,18 @@ board_hash_calls = 0
 extend_time = 0.0
 extend_calls = 0
 
-
-def get_board_size(board):
+def printlog(s = ''): # {{{
+    logging.debug(s)
+    print(s)
+# }}}
+def get_board_size(board): # {{{
     board_size_x = len(board)
     if board_size_x == 0:
         return 0, 0
     board_size_y = len(board[0])
     return board_size_x, board_size_y
-
-def get_right_rotated_board(board):
+# }}}
+def get_right_rotated_board(board): # {{{
     start = time.time()
     board_size_x, board_size_y = get_board_size(board)
     new_board = []
@@ -166,8 +145,8 @@ def get_right_rotated_board(board):
     rotated_board_time = rotated_board_time + time.time() - start
 
     return new_board
-
-def get_left_rotated_board(board):
+# }}}
+def get_left_rotated_board(board): # {{{
     start = time.time()
     board_size_x, board_size_y = get_board_size(board)
     new_board = []
@@ -183,8 +162,8 @@ def get_left_rotated_board(board):
     rotated_board_time = rotated_board_time + time.time() - start
 
     return new_board
-
-def get_twice_rotated_board(board):
+# }}}
+def get_twice_rotated_board(board): # {{{
     start = time.time()
     board_size_x, board_size_y = get_board_size(board)
     new_board = []
@@ -200,9 +179,8 @@ def get_twice_rotated_board(board):
     rotated_board_time = rotated_board_time + time.time() - start
 
     return new_board
-
-
-def get_updown_mirrored_board(board):
+# }}}
+def get_updown_mirrored_board(board): # {{{
     start = time.time()
     new_board = []
     board_size_x = len(board)
@@ -222,8 +200,8 @@ def get_updown_mirrored_board(board):
     mirrored_board_time = mirrored_board_time + time.time() - start
 
     return new_board
-
-def get_rightleft_mirrored_board(board):
+# }}}
+def get_rightleft_mirrored_board(board): # {{{
     start = time.time()
     new_board = []
     board_size_x = len(board)
@@ -243,8 +221,8 @@ def get_rightleft_mirrored_board(board):
     mirrored_board_time = mirrored_board_time + time.time() - start
 
     return new_board
-
-def trim_board(board,missing):
+# }}}
+def trim_board(board,missing): # {{{
     if len(board) == 0:
         return
 
@@ -271,8 +249,8 @@ def trim_board(board,missing):
     while len(board[0]) > 1 and set(last_row(board)) == set([' ']):
         for x in range(len(board)):
             board[x].pop(-1)
-
-def str2board(board_str):
+# }}}
+def str2board(board_str): # {{{
     # for testing
     board_size_x = 0
     board_size_y = 0
@@ -291,9 +269,8 @@ def str2board(board_str):
     trim_board(board, [])
 
     return board
-
-
-def get_board_hash(board):
+# }}}
+def get_board_hash(board): # {{{
     start = time.time()
     board_size_x, board_size_y = get_board_size(board)
     if board_size_x > board_size_y:
@@ -309,9 +286,8 @@ def get_board_hash(board):
     board_hash_time = board_hash_time + time.time() - start
 
     return h
-
-
-def have_been_there(board, been_there):
+# }}}
+def have_been_there(board, been_there): # {{{
     start = time.time()
     def ret(retval):
         global board_hash_calls
@@ -378,8 +354,8 @@ def have_been_there(board, been_there):
     been_there[board_hash] = None
 
     ret(False)
-
-def show_board(board):
+# }}}
+def show_board(board): # {{{
     board_size_x, board_size_y = get_board_size(board)
 
     #print('-------------------------------------------')
@@ -388,8 +364,8 @@ def show_board(board):
         for j in range(board_size_y):
             print(board[i][j], end='')
         print()
-
-def get_center_of_mass(board):
+# }}}
+def get_center_of_mass(board): # {{{
     # artificial center of mass to help rotating and ordering
     board_size_x, board_size_y = get_board_size(board)
     x_center = 0
@@ -404,9 +380,8 @@ def get_center_of_mass(board):
     y_center = y_center / total_weight - 0.5
 
     return x_center, y_center, total_weight
-
-
-def rotate_and_order(board_list):
+# }}}
+def rotate_and_order(board_list): # {{{
     # tries to make some kind of order, hoping the similar boards will be
     # next to eacho other (also rotates boards into "landscape mode")
     board_order = []
@@ -428,8 +403,8 @@ def rotate_and_order(board_list):
                            round(x_cg,3) * 10**5 + round(y_cg,3))
 
     board_list[:] = [ b for _,b in sorted(zip(board_order,board_list)) ]
-
-def show_multiple_boards(board_list):
+# }}}
+def show_multiple_boards(board_list): # {{{
     print_board_list = deepcopy(board_list)
     term_y, term_x = os.get_terminal_size()
     space_bw_items = 3
@@ -464,9 +439,8 @@ def show_multiple_boards(board_list):
                     print(' ' * b_y, end='')
                 print(' ' * space_bw_items, end='')
             print()
-
-
-def extend_board_left(board):
+# }}}
+def extend_board_left(board): # {{{
     start = time.time()
     board_size_x, board_size_y = get_board_size(board)
     for i in range(board_size_x):
@@ -476,8 +450,8 @@ def extend_board_left(board):
     extend_calls += 1
     global extend_time
     extend_time = extend_time + time.time() - start
-
-def extend_board_right(board):
+# }}}
+def extend_board_right(board): # {{{
     start = time.time()
     board_size_x, board_size_y = get_board_size(board)
     for i in range(board_size_x):
@@ -487,8 +461,8 @@ def extend_board_right(board):
     extend_calls += 1
     global extend_time
     extend_time = extend_time + time.time() - start
-
-def extend_board_top(board):
+# }}}
+def extend_board_top(board): # {{{
     start = time.time()
     board_size_x, board_size_y = get_board_size(board)
     board.insert(0, [])
@@ -499,8 +473,8 @@ def extend_board_top(board):
     extend_calls += 1
     global extend_time
     extend_time = extend_time + time.time() - start
-
-def extend_board_bottom(board):
+# }}}
+def extend_board_bottom(board): #{{{
     start = time.time()
     board_size_x, board_size_y = get_board_size(board)
     board.append([])
@@ -511,9 +485,8 @@ def extend_board_bottom(board):
     extend_calls += 1
     global extend_time
     extend_time = extend_time + time.time() - start
-
-
-def put_new_item(board, x, y, item, missing, roads):
+# }}}
+def put_new_item(board, x, y, item, missing, roads): # {{{
     board_size_x, board_size_y = get_board_size(board)
 
     if   item in straights:  roads['straight'] -= 1
@@ -571,8 +544,8 @@ def put_new_item(board, x, y, item, missing, roads):
 
     missing.extend(new_missing)
     return x, y, new_missing
-
-def remove_item(board, x, y, item_caused_missing, missing, roads):
+# }}}
+def remove_item(board, x, y, item_caused_missing, missing, roads): # {{{
     if   board[x][y] in straights:  roads['straight'] += 1
     elif board[x][y] in turns:      roads['turn']     += 1
     elif board[x][y] in t_crosses:  roads['tcross']   += 1
@@ -584,8 +557,8 @@ def remove_item(board, x, y, item_caused_missing, missing, roads):
         missing.remove((mx,my))
     missing.insert(0,(x,y))
     trim_board(board, missing)
-
-def is_almost_rectangle_board(board):
+# }}}
+def is_almost_rectangle_board(board): # {{{
     # True when the board corners are roads (or '*'), but allows holes and
     # bays on the edges
     board_size_x, board_size_y = get_board_size(board)
@@ -600,8 +573,8 @@ def is_almost_rectangle_board(board):
         return True
     else:
         return False
-
-def is_rectangle_board(board):
+# }}}
+def is_rectangle_board(board): # {{{
     # True when the board edges are roads (or '*'), but allows holes inside
     board_size_x, board_size_y = get_board_size(board)
     for x in range(board_size_x):
@@ -612,8 +585,8 @@ def is_rectangle_board(board):
             return False
 
     return True
-
-def is_hole(board,x,y):
+# }}}
+def is_hole(board,x,y): # {{{
     # True when the x,y place is part of a hole
     board_size_x, board_size_y = get_board_size(board)
     bubble_inner = set()
@@ -632,8 +605,8 @@ def is_hole(board,x,y):
         bubble_edge = next_bubble_edge - bubble_inner
         bubble_inner = next_bubble_edge | bubble_inner
     return not out
-
-def is_hole_on_board(board):
+# }}}
+def is_hole_on_board(board): # {{{
     # True when there is a hole on the board (hole is completely 
     # surrounded by roads (or *))
     board_size_x, board_size_y = get_board_size(board)
@@ -642,8 +615,8 @@ def is_hole_on_board(board):
             if board[x][y] == ' ' and is_hole(board,x,y):
                 return True
     return False
-
-def is_perfect_board(board):
+# }}}
+def is_perfect_board(board): # {{{
     # True when the boaard is fully filled by roads (or '*')
     # (same as rectangle with no holes)
     board_size_x, board_size_y = get_board_size(board)
@@ -652,8 +625,8 @@ def is_perfect_board(board):
             if board[x][y] == ' ':
                 return False
     return True
-
-def is_symmetric_board(board):
+# }}}
+def is_symmetric_board(board): # {{{
 
     board_size_x, board_size_y = get_board_size(board)
 
@@ -690,28 +663,21 @@ def is_symmetric_board(board):
         if get_left_rotated_board(m_board) == board: return True
 
     return False
-
-
-
-def solve_board(progress, solutions, solution_hashes, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent, use_mp, sema, sema_release):
+# }}}
+def solve_board(progress, solutions, solution_hashes, been_there, missing, board, a,b, new_item, roads, used_items, min_used_items, cache_percent, use_mp, sema, sema_release): # {{{
 
     real_a, real_b, new_missing = put_new_item(board, a, b, new_item, missing, roads)
 
     board_size_x, board_size_y = get_board_size(board)
 
-    #print(' -x-x-x-x-x-')
-    #print('==----------------------------------------------------------------')
-    #show_board(board)
-    #print(missing)
-    #print('==----------------------------------------------------------------')
-
+    logging.debug(f'solve_board called: level = {used_items}, new_item: {new_item} ({a},{b})')
 
     all_roads_left = roads['straight'] + roads['turn'] + roads['tcross'] + roads['xcross']
 
     if len(missing) > all_roads_left:
         # already too many open ends
-        #print('x', end='')
         remove_item(board, real_a, real_b, new_missing, missing, roads)
+        logging.debug('END. More missing place than free roads.')
         if sema_release: sema.release()
         return False
 
@@ -727,29 +693,22 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
 
         if used_items != min_used_items:
             remove_item(board, real_a, real_b, new_missing, missing, roads)
+            logging.debug(f'END. Not a good solution, not enough unused roads (used_items={used_items}).')
             if sema_release: sema.release()
             return False
 
         if not have_been_there(board, solution_hashes):
             solutions.append(board)
-            print(f'\nFound a new solution! Size: {board_size_x}x{board_size_y} ({len(solutions)}, {round(progress[1])}%)')
+            logging.debug(f'END. Found a new solution! board hash: {get_board_hash(board)}  ({len(solutions)})')
+            print(f'\nFound a new solution! Size: {board_size_x}x{board_size_y} ({len(solutions)})')
             show_board(board)
-        #print('xxxxxxxxxxxxxx')
-        #print(m_board_hash)
-        #print('xxxxxxxxxxxxxx')
         remove_item(board, real_a, real_b, new_missing, missing, roads)
         if sema_release: sema.release()
         return True
 
-    #show_board(board)
-    #print(f' missing = {missing}')
     x, y = missing[0]
-    #print(f' x,y = {x},{y}')
+    logging.debug(f'picked up x,y={x},{y} from the list: {missing}')
 
-    #print(f' new item: {new_item} ({a},{b})')
-    #print(x,y)
-    #print(board[x][y])
-    #show_board(board)
     possible_new_items = set(road_types)
     if x > 0 and board[x-1][y] in road_types:
         if board[x-1][y] in bottom_open:
@@ -779,48 +738,32 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
 
     if len(possible_new_items) == 0:
         # no fitting road piece
-        #print('0', end='')
-        ###missing.insert(0,(x,y))
-        #remove_item(board, real_a, real_b, new_missing, missing, roads)
-        #return False
-        #print('No item prossible')
+        logging.debug(f'END. No fitting road piece for {x},{y}.')
         remove_item(board, real_a, real_b, new_missing, missing, roads)
         if sema_release: sema.release()
         return False
 
 
     possible_new_steps = len(possible_new_items)
+    logging.debug(f'{possible_new_steps} possible road piece on {x},{y}')
 
     progress_step = (progress[1] - progress[0]) / possible_new_steps
-    #print(f' x,y = {x},{y},  a,b = {a},{b}, {new_item} new_missing = {new_missing}')
 
     step = 0
     mp_proc = []
 
     for new in possible_new_items:
-        #print(f'  try: {new}')
-
         next_progress = ( progress[0] + progress_step * step,
                           progress[0] + progress_step * (step+1)
                         )
 
-        #print(f'recursive call (level = {used_items})')
-        #h1 = get_board_hash(board)
-        #b1 = deepcopy(board)
         if use_mp and used_items < 5 and sema.acquire(block = False):
+            logging.info('Forking a new process.')
             mp_proc.append(Process(target = solve_board,
                                    args = (next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, deepcopy(roads), used_items+1, min_used_items, cache_percent, use_mp, sema, True )))
             mp_proc[-1].start()
         else:
             solve_board(next_progress, solutions, solution_hashes, been_there, missing, board, x, y, new, roads, used_items+1, min_used_items, cache_percent, use_mp, sema, False)
-        #h2 = get_board_hash(board)
-        #if h1 != h2:
-        #    print('board hash is changed! ======================x=x=x=x')
-        #    print('before:')
-        #    show_board(b1)
-        #    print('after:')
-        #    show_board(board)
-        #print(f'/recursive call (level = {used_items})')
 
         step += 1
 
@@ -828,11 +771,11 @@ def solve_board(progress, solutions, solution_hashes, been_there, missing, board
 
     if sema_release:
         sema.release()
+        logging.info('Fork ends here.')
     for mpp in mp_proc:
         mpp.join()
-
-
-def solve_board_wrapper(roads, min_used_items, cache_percent, use_mp):
+# }}}
+def solve_board_wrapper(roads, min_used_items, cache_percent, use_mp): # {{{
     mpman = Manager()
     solutions = mpman.list()
 
@@ -851,9 +794,8 @@ def solve_board_wrapper(roads, min_used_items, cache_percent, use_mp):
     solve_board(progress, solutions, solution_hashes, been_there, missing, board, 0, 0, '╭', roads, 1, min_used_items, cache_percent, use_mp, sema, False)
 
     return solutions
-
-
-def print_solution_report(solutions):
+# }}}
+def print_solution_report(solutions): # {{{
     if len(solutions) == 0:
         return
     print(f' ------ All solutions ({len(solutions)}) ------')
@@ -896,28 +838,28 @@ def print_solution_report(solutions):
     printoutboards('Irregular shapes without holes', sol_irreg_no_holes)
 
     printoutboards('Irregular shapes with holes', solutions)
-
-def remove_duplicated_boards(board_list):
+# }}}
+def remove_duplicated_boards(board_list): #{{{
     board_hash_set = dict()
     new_list = []
     for b in board_list:
         if not have_been_there(b, board_hash_set):
             new_list.append(b)
     return new_list
+#}}}
 
-def main():
-    ### Main
-
-    ### Arguments
+def main(): # {{{
+    ### {{{ Arguments
     parser = argparse.ArgumentParser(description='Gives you all the combinations of closed roads (meaning: no open ends) what you can build from your Lego City road plates. Use the options bellow to tell how many boards you have.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--straight', type=int, action='store', default=0, help='number of straight road plates')
     parser.add_argument('--turn', type=int, action='store', default=0,     help='number of simple turn road plates')
     parser.add_argument('--tcross', type=int, action='store', default=0,   help='number of T (3 way) crossing road plates')
     parser.add_argument('--xcross', type=int, action='store', default=0,   help='number of X (4 way) crossing road plates')
 
-    parser.add_argument('--cache-percent', type=int, action='store', default=0,   help='percentage of stored already known path. Doesnt\'t work very well in multiprocessing (which is enabled by default), but reduce search time for single process runs (high cache -> VERY high memory usage, low cache -> slower runs), see the --no-mp option')
+    parser.add_argument('--cache-percent', type=int, action='store', default=0,   help='percentage of stored already known path. Doesn\'t work very well in multiprocessing (which is enabled by default), but reduce search time for single process runs (high cache -> VERY high memory usage, low cache -> slower runs), see the --no-mp option')
 
     parser.add_argument('--no-mp', action='store_true', help='disable multiprocessing')
+    parser.add_argument('--log', action='store_true', help='creates a log file legocityroad.log (useful for debugging, significantly slower runs). ')
 
     args = parser.parse_args()
     n_straight = args.straight
@@ -928,15 +870,31 @@ def main():
 
     cache_percent = args.cache_percent
 
-    ### /Arguments
+    if args.log:
+        loglevel = logging.DEBUG
+    else:
+        loglevel = logging.CRITICAL # no logging
 
-    print(' Number of plates:')
-    print(f'    straight = { n_straight }')
-    print(f'    turn     = { n_turn }')
-    print(f'    T-cross  = { n_tcross }')
-    print(f'    X-cross  = { n_xcross }')
-    print(f'    total    = { n_straight + n_turn + n_tcross + n_xcross}')
-    print()
+    ### }}} Arguments 
+    ### {{{ Logging
+    logging.basicConfig(
+            filename = os.path.join(os.path.dirname(__file__),'legocityroad.log'),
+            filemode = 'a',
+            format   = '%(asctime)s,%(msecs)d %(process)d %(name)s %(levelname)s %(message)s',
+            datefmt  = '%Y-%m-%d,%H:%M:%S',
+            level    = loglevel
+            )
+    log = logging.getLogger('lcr')
+    ### }}} /Logging 
+
+    logging.debug('Script started.')
+    printlog(' Number of plates:')
+    printlog(f'    straight = { n_straight }')
+    printlog(f'    turn     = { n_turn }')
+    printlog(f'    T-cross  = { n_tcross }')
+    printlog(f'    X-cross  = { n_xcross }')
+    printlog(f'    total    = { n_straight + n_turn + n_tcross + n_xcross}')
+    printlog()
 
     roads = { 'straight': n_straight, 'turn': n_turn, 'tcross': n_tcross, 'xcross': n_xcross }
     min_used_items = n_straight + n_turn + n_tcross + n_xcross
@@ -960,7 +918,7 @@ def main():
     #print(f' extend_time           = { extend_time }   calls: {extend_calls}')
     #print()
     #print(f' size of been_there: {sys.getsizeof(been_there) / 1024**2} MB')
-
+# }}}
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
