@@ -1,6 +1,8 @@
 
 # LegoCityRoad
 
+![LegoCityRoad.jpg](LegoCityRoad_small.jpg)
+
 ## Introduction
 
 Do you have Lego road plates? Do you want to know what roads you are able to build of them? Here the help is coming!
