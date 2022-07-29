@@ -406,7 +406,10 @@ def rotate_and_order(board_list): # {{{
 # }}}
 def show_multiple_boards(board_list): # {{{
     print_board_list = deepcopy(board_list)
-    term_y, term_x = os.get_terminal_size()
+    try:
+        term_y, term_x = os.get_terminal_size()
+    except OSError:
+        term_y = 100
     space_bw_items = 3
     rotate_and_order(print_board_list)
     while len(print_board_list) > 0:
